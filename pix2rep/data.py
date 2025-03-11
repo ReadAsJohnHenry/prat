@@ -70,7 +70,7 @@ class ACDC_dataset:
         return files_paths
 
 
-    def extract_and_preprocess_slices(self) :
+    def extract_and_preprocess_slices(self, dim=128) :
         
         subjects = {'training' : [],
                       'testing' : []}
@@ -97,10 +97,9 @@ class ACDC_dataset:
                 cropped_volume_mask, cropped_volume_img = utils.crop_slice_zone_of_interest(mask, img_mri, margin = 10)     
                 
                 volume_img_normalized = utils.normalize_extreme_values(cropped_volume_img)
-                volume_mask_normalized = utils.normalize_extreme_values(cropped_volume_mask)
 
-                volume_img = F.interpolate(volume_img_normalized.unsqueeze(0).permute(3, 0, 1, 2), size = (128, 128))
-                volume_mask = F.interpolate(volume_mask_normalized.unsqueeze(0).permute(3, 0, 1, 2), size = (128, 128))
+                volume_img = F.interpolate(volume_img_normalized.unsqueeze(0).permute(3, 0, 1, 2), size = (dim, dim))
+                volume_mask = F.interpolate(cropped_volume_mask.unsqueeze(0).permute(3, 0, 1, 2), size = (dim, dim))
 
                 for slice_index in range(volume_img.shape[0]) : 
 
@@ -261,6 +260,7 @@ class Partially_Supervised_Loaders() :
                                             p = cfg_transform.random_gamma_p),
                             tio.RandomBiasField(coefficients = cfg_transform.random_field_coef, 
                                                 p = cfg_transform.random_field_p),
+                            tio.RescaleIntensity(out_min_max = (0, 1)),
                             transforms.RandomInvert(p = cfg_transform.random_invert_p)    
                             ])
         training_dataset = CustomDataset_Supervised(
@@ -269,11 +269,15 @@ class Partially_Supervised_Loaders() :
 
         # Validation Dataset
         validation_dataset = CustomDataset_Supervised(
-            validation_subjects, 
+            validation_subjects,
+            transforms = tio.RescaleIntensity(out_min_max = (0, 1))
             )
 
         # Testing Dataset
-        testing_dataset = CustomDataset_Supervised(testing_subjects)
+        testing_dataset = CustomDataset_Supervised(
+            testing_subjects,
+            transforms = tio.RescaleIntensity(out_min_max = (0, 1))
+            )
 
         ########### Building Loaders ###########
 
@@ -337,6 +341,7 @@ class Partially_Supervised_Loaders() :
                                             p = cfg_transform.random_gamma_p),
                             tio.RandomBiasField(coefficients = cfg_transform.random_field_coef, 
                                                 p = cfg_transform.random_field_p),
+                            tio.RescaleIntensity(out_min_max = (0, 1)),
                             transforms.RandomInvert(p = cfg_transform.random_invert_p)    
                             ])
         training_dataset = CustomDataset_CL(
@@ -345,7 +350,9 @@ class Partially_Supervised_Loaders() :
 
         # Validation Dataset
         validation_dataset = CustomDataset_CL(
-            validation_subjects)
+            validation_subjects,
+            transforms = tio.RescaleIntensity(out_min_max = (0, 1))
+            )
         
 
         ########### Building Loaders ###########
@@ -372,15 +379,16 @@ class Partially_Supervised_Loaders() :
         for patient_id in range(101, 151) :
             slices_idx = (torch.tensor(self.all_slices['testing']['patient_id']) == patient_id).nonzero()
 
-            slices = torch.stack(self.all_slices['training']['mri_slices'])[slices_idx, 0, 0, ...]
-            masks = torch.stack(self.all_slices['training']['masks'])[slices_idx, 0, 0, ...]
+            slices = torch.stack(self.all_slices['testing']['mri_slices'])[slices_idx, 0, 0, ...]
+            masks = torch.stack(self.all_slices['testing']['masks'])[slices_idx, 0, 0, ...]
 
             patient = tio.Subject(mri_slice = tio.ScalarImage(tensor = slices),
                                 mask = tio.ScalarImage(tensor = masks))
 
             subjects_volume_test.append(patient)
             
-        testing_dataset_volume = CustomDataset_Supervised(subjects_volume_test)
+        testing_dataset_volume = CustomDataset_Supervised(subjects_volume_test,
+                                                        transforms = tio.RescaleIntensity(out_min_max = (0, 1)))
 
         testing_loader_volume = torch.utils.data.DataLoader(
                     testing_dataset_volume,

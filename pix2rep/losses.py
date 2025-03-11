@@ -1,20 +1,10 @@
 import torch
 import torch.nn.functional as F
-import torchio as tio
 
 import einops as ops
 
 import utils
 
-# def transform_mask_for_dice_loss(labels, batch, num_classes = 4, img_size = 64) :
-
-#     batch_size = batch['mri_slice'][tio.DATA].shape[0]
-#     new_masks = torch.zeros([batch_size, num_classes, img_size, img_size])
-    
-#     for value in labels.unique() :
-#         new_masks[:, int(value):int(value+1), :, :][labels == value] = 1
-
-#     return new_masks
 
 def transform_mask_for_dice_loss(labels, batch, num_classes = 4) :
 
@@ -28,20 +18,46 @@ def transform_mask_for_dice_loss(labels, batch, num_classes = 4) :
 
     return new_masks
 
-def transform_mask_for_dice_loss_3D(labels, batch) :
+def transform_mask_for_dice_loss_3D(labels, batch, num_classes = 4) :
 
     batch_size = 1
-    num_classes = 4
-    img_size = 128
+    img_size = labels.shape[-3], labels.shape[-2]
     depth = labels.shape[-1]
     
-    new_masks = torch.zeros([batch_size, num_classes, img_size, img_size, depth])
+    new_masks = torch.zeros([batch_size, num_classes, img_size[0], img_size[1], depth])
     
     for value in labels.unique() :
         new_masks[:, int(value):int(value+1), :, :, :][labels == value] = 1
 
     return new_masks
 
+def off_diagonal(x):
+    # return a flattened view of the off-diagonal elements of a square matrix
+    n, m = x.shape
+    assert n == m
+    return x.flatten()[:-1].view(n - 1, n + 1)[:, 1:].flatten()
+
+def barlow_loss(features_1, features_2, lambda_param, device):
+
+    features_1 = ops.rearrange(features_1, 'b c h w -> (b h w) c')
+    features_2 = ops.rearrange(features_2, 'b c h w -> (b h w) c')
+
+    bn = torch.nn.BatchNorm1d(features_1.shape[1], affine=False).to(device)
+
+    features_1 = bn(features_1)
+    features_2 = bn(features_2)
+
+    c = features_1.T @ features_2
+
+    c.div_(features_1.shape[0])
+
+    on_diag = torch.diagonal(c).add_(-1).pow_(2).sum()
+
+    off_diag = off_diagonal(c).pow_(2).sum()
+
+    loss = on_diag + lambda_param * off_diag
+
+    return loss
 
 def info_nce_loss(features_1, features_2, num_samples, temperature, device) :
 
@@ -73,29 +89,6 @@ def info_nce_loss(features_1, features_2, num_samples, temperature, device) :
     logits = logits / temperature
 
     return logits, batch_targets
-
-# def info_nce_loss_simclr(features_1, features_2, temperature, device) :
-
-#     labels = torch.cat([torch.arange(features_1.shape[0]) for i in range(2)], dim=0)
-#     labels = (labels.unsqueeze(0) == labels.unsqueeze(1)).float()
-#     labels = labels.to(device)
-
-#     # Create matrices
-#     features_1 = ops.rearrange(features_1, 'b c h w -> (b h w) c')
-#     features_2 = ops.rearrange(features_2, 'b c h w -> (b h w) c')
-
-#     # Normalize the feature vectors across the channels dimension
-#     features_1 = F.normalize(features_1, dim=1) 
-#     features_2 = F.normalize(features_2, dim=1)
-
-#     logits = torch.cat((features_1, features_2), dim = 0)
-#     similarity_matrix = torch.matmul(logits, logits.T)
-
-#     mask = torch.eye(labels.shape[0]).to(device)
-#     logits = similarity_matrix[~mask.bool()].view(similarity_matrix.shape[0], -1)
-#     logits = logits / temperature
-
-#     return logits, batch_targets
 
 def info_nce_loss_simclr(features_1, features_2, temperature, device) :
 
@@ -157,8 +150,6 @@ def grouped_loss(features_1, features_2, num_groups, num_samples, temperature) :
 
     return logits, batch_targets
 
-
-
 def dice_coefficient(output, target, epsilon=1e-5):
     # Reshape predictions and targets for batch-wise calculations
     output = output.view(output.size(0), output.size(1), -1)
@@ -170,7 +161,6 @@ def dice_coefficient(output, target, epsilon=1e-5):
     dice_coeff = (2.0 * intersection + epsilon) / (union + epsilon)
 
     return dice_coeff
-
 
 def dice_loss(output, target, use_hard_pred = False):
 

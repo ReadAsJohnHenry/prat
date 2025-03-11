@@ -129,12 +129,18 @@ class CL_Model:
                     grid = F.affine_grid(transfo_affine, features_1.shape, align_corners = True)
                     features_1 = F.grid_sample(features_1, grid, align_corners = True)
                 
-                    # Compute logits and loss
+                    # Compute logits and loss with the InfoNCE loss
                     logits, labels = losses.info_nce_loss(features_1, features_2, 
                                                           self.cfg.contrastive_pretraining.num_samples, 
                                                           self.cfg.contrastive_pretraining.temperature, 
                                                           self.device)
                     batch_loss_training = self.loss_function(logits, labels)
+
+                    # Compute loss with the Barlow Twins loss
+                    # batch_loss_training = losses.barlow_loss(features_1, features_2,
+                    #                                          self.cfg.contrastive_pretraining.lambda_barlow,
+                    #                                          self.device)
+
                     train_loss.append(batch_loss_training.item())
                     
                     # Reset Gradients
@@ -179,9 +185,12 @@ class CL_Model:
                             # Apply spatial transformation to the feature map
                             features_1 = F.grid_sample(features_1, grid, align_corners = True)
 
-                            # Compute logits and loss
+                            # Compute logits and loss with the InfoNCE loss
                             logits, labels = losses.info_nce_loss(features_1, features_2, self.cfg.contrastive_pretraining.num_samples, self.cfg.contrastive_pretraining.temperature, self.device)
                             batch_loss_validation = self.loss_function(logits, labels)
+
+                            # Compute loss with the Barlow Twins loss
+                            # batch_loss_validation = losses.barlow_loss(features_1, features_2, self.cfg.contrastive_pretraining.lambda_barlow, self.device)
 
                             val_loss.append(batch_loss_validation.item())
 
@@ -294,7 +303,7 @@ class CL_Model:
                     inputs = batch[0].squeeze(1).float().to(self.device)
                     labels = batch[1].squeeze(1).float().to(self.device)
 
-                    labels = losses.transform_mask_for_dice_loss(labels, batch).to(self.device)
+                    labels = losses.transform_mask_for_dice_loss(labels, batch, num_classes=self.cfg.contrastive_pretraining.n_classes).to(self.device)
 
                     logits = self.finetuning_layer(self.model(inputs))
                     
@@ -327,7 +336,7 @@ class CL_Model:
                             inputs = batch_val[0].squeeze(1).float().to(self.device)
                             labels = batch_val[1].squeeze(1).float().to(self.device)
                             
-                            labels = losses.transform_mask_for_dice_loss(labels, batch_val).to(self.device)
+                            labels = losses.transform_mask_for_dice_loss(labels, batch_val, num_classes=self.cfg.contrastive_pretraining.n_classes).to(self.device)
 
                             logits = self.finetuning_layer(self.model(inputs))
                             
@@ -367,7 +376,7 @@ class CL_Model:
                     inputs = batch[0].squeeze(1).float().to(self.device)
                     labels = batch[1].squeeze(1).float().to(self.device)
                     
-                    labels = losses.transform_mask_for_dice_loss(labels, batch).to(self.device)
+                    labels = losses.transform_mask_for_dice_loss(labels, batch, num_classes=self.cfg.contrastive_pretraining.n_classes).to(self.device)
 
                     logits = self.finetuning_layer(self.model(inputs))
                     
@@ -395,7 +404,7 @@ class CL_Model:
                     inputs = batch[0].squeeze(0).float().to(self.device)
                     labels = batch[1].permute(0, 2, 3, 4, 1)
                     
-                    labels = losses.transform_mask_for_dice_loss_3D(labels, batch).to(self.device)
+                    labels = losses.transform_mask_for_dice_loss_3D(labels, batch, num_classes=self.cfg.contrastive_pretraining.n_classes).to(self.device)
 
                     logits = self.finetuning_layer(self.model(inputs))
                     logits = logits.permute(1, 2, 3, 0).unsqueeze(0)

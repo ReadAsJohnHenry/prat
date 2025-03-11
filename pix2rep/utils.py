@@ -1,5 +1,5 @@
 from omegaconf import OmegaConf
-from hydra.experimental import compose, initialize
+from hydra import compose, initialize
 
 import nibabel as nib
 import torch
@@ -44,7 +44,7 @@ def crop_slice_zone_of_interest(volume_mask, volume_mri = None, margin = 10) :
     x_min, x_max = max(0, x_min - margin), min(x_max + margin, volume_mask.shape[0])
     y_min, y_max = max(0, y_min - margin), min(y_max + margin, volume_mask.shape[1])
 
-    cropped_label = volume_mask[x_min:x_max, y_min:y_max, :]
+    cropped_label = volume_mask[x_min:x_max+1, y_min:y_max+1, :]
 
     if volume_mri is not None : 
 
@@ -255,6 +255,6 @@ class Config:
         self.cfg = self.load_config(config_path)
 
     def load_config(self, config_path: str):
-        with initialize(config_path=config_path):
+        with initialize(config_path=config_path, version_base=None) :
             cfg = compose(config_name="config")
         return cfg
