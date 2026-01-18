@@ -156,11 +156,16 @@ class AttentionUNet(nn.Module):
         self.down5 = Down(1024, 2048 // factor)
 
         # Attention Gates
-        self.att1 = AttentionGate(F_g=1024//factor, F_l=1024, F_int=512)
-        self.att2 = AttentionGate(F_g=512//factor, F_l=512, F_int=256)
-        self.att3 = AttentionGate(F_g=256//factor, F_l=256, F_int=128)
-        self.att4 = AttentionGate(F_g=128//factor, F_l=128, F_int=64)
-        self.att5 = AttentionGate(F_g=n_features_map, F_l=64, F_int=32)
+        # self.att1 = AttentionGate(F_g=1024//factor, F_l=1024, F_int=512)
+        # self.att2 = AttentionGate(F_g=512//factor, F_l=512, F_int=256)
+        # self.att3 = AttentionGate(F_g=256//factor, F_l=256, F_int=128)
+        # self.att4 = AttentionGate(F_g=128//factor, F_l=128, F_int=64)
+        # self.att5 = AttentionGate(F_g=n_features_map, F_l=64, F_int=32)
+        self.att1 = AttentionGate(F_g=1024, F_l=1024, F_int=512)
+        self.att2 = AttentionGate(F_g=512,  F_l=512,  F_int=256)
+        self.att3 = AttentionGate(F_g=256,  F_l=256,  F_int=128)
+        self.att4 = AttentionGate(F_g=128,  F_l=128,  F_int=64)
+        self.att5 = AttentionGate(F_g=64,   F_l=64,   F_int=32)
 
         # Decoder
         self.up1 = Up(2048, 1024 // factor, bilinear)
