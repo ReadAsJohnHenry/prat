@@ -11,7 +11,8 @@ from torch.utils.data import Dataset
 import torchio as tio
 from torchvision import transforms
 
-import utils
+# import utils
+from . import utils
 
 
 class ACDC_dataset:
@@ -26,12 +27,12 @@ class ACDC_dataset:
         patients_info = {'training' : {},
                          'testing' : {}}
 
-        for train_or_test_folder in os.listdir(self.data_folder_path) :
+        for train_or_test_folder in sorted(os.listdir(self.data_folder_path)) :
             train_or_test_folder_path = os.path.join(self.data_folder_path, train_or_test_folder)
             
             if os.path.isdir(train_or_test_folder_path) :
 
-                for patient_folder in os.listdir(train_or_test_folder_path) :
+                for patient_folder in sorted(os.listdir(train_or_test_folder_path)) :
                     patient_folder_path = os.path.join(train_or_test_folder_path, patient_folder)
 
                     if os.path.isdir(patient_folder_path) :
@@ -54,17 +55,17 @@ class ACDC_dataset:
         files_paths = {'training' : [],
                         'testing' : []}
 
-        for train_or_test_folder in os.listdir(self.data_folder_path) :
+        for train_or_test_folder in sorted(os.listdir(self.data_folder_path)) :
             train_or_test_folder_path = os.path.join(self.data_folder_path, train_or_test_folder)
             
             if os.path.isdir(train_or_test_folder_path) :
 
-                for patient_folder in os.listdir(train_or_test_folder_path) :
+                for patient_folder in sorted(os.listdir(train_or_test_folder_path)) :
                     patient_folder_path = os.path.join(train_or_test_folder_path, patient_folder)
 
                     if os.path.isdir(patient_folder_path) :
 
-                        for patient_file in glob.glob(os.path.join(patient_folder_path, f'patient???_frame??.nii.gz')):
+                        for patient_file in sorted(glob.glob(os.path.join(patient_folder_path, f'patient???_frame??.nii.gz'))):
                             files_paths[train_or_test_folder].append(patient_file)
         
         return files_paths
@@ -80,12 +81,13 @@ class ACDC_dataset:
 
         files_paths = self.retrieve_all_files_path()
     
-        for train_or_test in files_paths.keys() :
+        for train_or_test in sorted(files_paths.keys()) :
             for file_path in files_paths[train_or_test] : 
 
                 base_file = file_path.split('.nii.gz')[0]
                 mask_file = base_file + '_gt.nii.gz'
-                patient_id = int(file_path.split('/')[7].split('patient')[1])
+                # patient_id = int(file_path.split('/')[7].split('patient')[1])
+                patient_id = int(file_path.split('/')[3].split('patient')[1])
 
                 img_mri, img_affine, img_header = utils.load_nii(file_path)
                 mask = utils.load_nii(mask_file)[0]
@@ -130,6 +132,8 @@ class Partially_Supervised_Loaders() :
         self.patients_groups_ids = self.get_patients_ids_per_group()
         self.slices_per_groups = self.get_slices_per_groups()
 
+        self.g = torch.Generator()
+        self.g.manual_seed(999)
     
     def get_patients_ids_per_group(self) : 
 
@@ -179,12 +183,15 @@ class Partially_Supervised_Loaders() :
         return slices_per_groups
 
 
-    def build_subjects_list(self) : 
+    def build_subjects_list(self, k=None) : 
 
         subjects = []
         groups = ['MINF', 'NOR', 'RV', 'DCM', 'HCM']
 
         patients_ids_tracking = {key : [i for i in range(20)] for key in groups}
+
+        if k is not None:
+            self.cfg.data.num_patients = k
 
         # Randomly choose n volumes
         if self.cfg.data.num_patients < len(groups) :
@@ -233,18 +240,28 @@ class Partially_Supervised_Loaders() :
         return subjects
 
     
-    def build_loaders(self) : 
+    def build_loaders(self, k=None) : 
+
+        self.g.manual_seed(999)
 
         ########### Preprocessing ###########
 
-        subjects_training = self.build_subjects_list()
+        subjects_training = self.build_subjects_list(k)
+
         num_subjects = len(subjects_training)
 
+        # if k is not None:
+        #     num_training_subjects = k
+        # else:
+        #     num_training_subjects = int(self.cfg.data.training_split_ratio * num_subjects)
         num_training_subjects = int(self.cfg.data.training_split_ratio * num_subjects)
         num_validation_subjects = num_subjects - num_training_subjects
         num_split_subjects = num_training_subjects, num_validation_subjects
 
         training_subjects, validation_subjects = torch.utils.data.random_split(subjects_training, num_split_subjects)
+        # if k is not None: 
+        #     training_subjects = torch.utils.data.Subset(subjects_training, list(range(k)))
+            # training_subjects = torch.utils.data.Subset(training_subjects, range(min(k, len(training_subjects))))
         testing_subjects = self.subjects['testing']
 
         ########### Building Datasets ###########
@@ -285,18 +302,24 @@ class Partially_Supervised_Loaders() :
             training_dataset,
             batch_size = self.cfg.data.batch_size,
             shuffle=True,
+            generator = self.g,
+            num_workers = 0,
         )
 
         validation_loader = torch.utils.data.DataLoader(
             validation_dataset,
             batch_size = self.cfg.data.batch_size,
             shuffle = True,
+            generator = self.g,
+            num_workers = 0,
         )
 
         testing_loader = torch.utils.data.DataLoader(
             testing_dataset,
             batch_size = self.cfg.data.batch_size,
             shuffle = True,
+            generator = self.g,
+            num_workers = 0,
         )
 
 
@@ -304,6 +327,8 @@ class Partially_Supervised_Loaders() :
 
 
     def build_loaders_for_CL_pretraining(self) : 
+
+        self.g.manual_seed(999)
 
         ########### Preprocessing ###########
 
@@ -362,12 +387,16 @@ class Partially_Supervised_Loaders() :
             batch_size = self.cfg.data.batch_size_CL,
             shuffle=True,
             # drop_last = True
+            generator = self.g,
+            num_workers = 0,
         )
 
         validation_loader = torch.utils.data.DataLoader(
             validation_dataset,
             batch_size = self.cfg.data.batch_size_CL,
             shuffle = True,
+            generator = self.g,
+            num_workers = 0,
         )
 
         return training_loader, validation_loader
@@ -439,7 +468,16 @@ class CustomDataset_CL(Dataset):
         view_2 = subject['mri_slice_view_2'].data
 
         if self.transform is not None:
+            original_rng_state = torch.get_rng_state()
+
+            seed_A = 999 + idx
+            torch.manual_seed(seed_A)
             view_1 = self.transform(view_1)
+
+            seed_B = 999 + idx + 10000
+            torch.manual_seed(seed_B)
             view_2 = self.transform(view_2)
+
+            torch.set_rng_state(original_rng_state)
 
         return view_1, view_2

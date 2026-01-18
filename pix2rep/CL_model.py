@@ -9,9 +9,12 @@ import torch.nn.functional as F
 import torchio as tio
 import monai
 
-import clean_code.pix2rep.utils as utils
-import clean_code.pix2rep.losses as losses
-from clean_code.pix2rep.models import U_Net_CL, MLP
+# import clean_code.pix2rep.utils as utils
+# import clean_code.pix2rep.losses as losses
+# from clean_code.pix2rep.models import U_Net_CL, MLP
+import pix2rep.utils as utils
+import pix2rep.losses as losses
+from pix2rep.models import U_Net_CL, MLP
 
 
 class CL_Model:
@@ -67,7 +70,10 @@ class CL_Model:
 
     def load_backbone_model(self, weights_load_path) :
         if weights_load_path != None:
+            # map_location = torch.device('cpu') 
+            # state_dict = torch.load(weights_load_path, map_location=map_location)
             self.model.load_state_dict(torch.load(weights_load_path))
+            # self.model.load_state_dict(state_dict)
 
 
     def load_outconv_model(self, weights_load_path) :
@@ -95,8 +101,8 @@ class CL_Model:
 
         optimizer = torch.optim.Adam(list(self.model.parameters()) + list(self.projection_head.parameters()), lr=self.cfg.contrastive_pretraining.learning_rate_backbone)
 
-        for epoch in range(self.cfg.contrastive_pretraining.num_epochs) :
-
+        # for epoch in range(self.cfg.contrastive_pretraining.num_epochs) :
+        for epoch in range(200) :
             train_loss = []
             val_loss = []
 
@@ -145,7 +151,8 @@ class CL_Model:
                     
                     # Reset Gradients
                     optimizer.zero_grad()
-                    batch_loss_training.backward(retain_graph = True)
+                    # batch_loss_training.backward(retain_graph = True)
+                    batch_loss_training.backward()
                     optimizer.step()
 
                     #Logging
@@ -209,7 +216,7 @@ class CL_Model:
         return avg_train_losses, avg_val_losses
 
 
-    def run_linear_probing(self, training_loader, validation_loader) :
+    def run_linear_probing(self, training_loader, validation_loader, k) :
 
         avg_train_losses = []
         avg_val_losses = []
@@ -273,15 +280,15 @@ class CL_Model:
                         avg_val_losses.append(np.average(val_loss))
 
                         if len(avg_val_losses) == 1 :
-                            torch.save(self.finetuning_layer.state_dict(), self.cfg.contrastive_pretraining.save_path_outconv_layer)
+                            torch.save(self.finetuning_layer.state_dict(), self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_lp_{k}.pth")
                         else :
-                            self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer)
+                            self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_lp_{k}.pth")
 
 
         return avg_train_losses, avg_val_losses
 
     
-    def run_finetuning(self, training_loader, validation_loader) :
+    def run_finetuning(self, training_loader, validation_loader, k) :
 
         avg_train_losses = []
         avg_val_losses = []
@@ -353,8 +360,91 @@ class CL_Model:
                             # torch.save(self.model.state_dict(), self.cfg.contrastive_pretraining.save_path_outconv_layer)
                             pass
                         else :
-                            self.save_best_model(avg_val_losses, self.model, self.cfg.contrastive_pretraining.save_path_backbone)
-                            self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer)
+                            self.save_best_model(avg_val_losses, self.model, self.cfg.contrastive_pretraining.save_path_backbone.split(".")[0]+f"_ft_{k}.pth")
+                            self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_ft_{k}.pth")
+                            
+                if self.early_stopping(avg_val_losses) : 
+                    print(f'Fine Tuning Training Early Stopping : Epoch n° {epoch}')
+                    break
+
+        return avg_train_losses, avg_val_losses
+    
+    def run_baseline_finetuning(self, training_loader, validation_loader, k) :
+
+        avg_train_losses = []
+        avg_val_losses = []
+
+        optim_backbone = torch.optim.Adam(self.model.parameters(), lr=self.cfg.contrastive_pretraining.finetuning_learning_rate_backbone)
+        optim_outconv = torch.optim.Adam(self.finetuning_layer.parameters(), lr=self.cfg.contrastive_pretraining.finetuning_learning_rate_outconv)
+
+        for epoch in range(self.cfg.contrastive_pretraining.num_epochs) :
+
+            train_loss = []
+            val_loss = []
+
+            # Training
+            self.model.train()
+            self.finetuning_layer.train()
+            with tqdm.tqdm(training_loader, unit = 'batch', disable = self.cfg.contrastive_pretraining.tqdm_disabled) as tepoch :
+                for batch_index, batch in enumerate(tepoch) :
+
+                    inputs = batch[0].squeeze(1).float().to(self.device)
+                    labels = batch[1].squeeze(1).float().to(self.device)
+
+                    labels = losses.transform_mask_for_dice_loss(labels, batch, num_classes=self.cfg.contrastive_pretraining.n_classes).to(self.device)
+
+                    logits = self.finetuning_layer(self.model(inputs))
+                    
+                    batch_loss_training = self.evaluation_loss(logits, labels)
+                    train_loss.append(batch_loss_training.item())
+                    
+                    optim_backbone.zero_grad()
+                    optim_outconv.zero_grad()
+
+                    batch_loss_training.backward(retain_graph = True)
+
+                    optim_backbone.step()
+                    optim_outconv.step()
+
+                    #Logging
+                    tepoch.set_description(f"Epoch {epoch}")
+                    tepoch.set_postfix(training_loss = f'{batch_loss_training.item()}')      
+
+            avg_train_losses.append(np.average(train_loss))
+            
+
+            # Validation
+            if epoch % self.cfg.contrastive_pretraining.eval_frequency == 0 :
+                self.model.eval()
+                self.finetuning_layer.eval()
+                with torch.no_grad() :
+                    with tqdm.tqdm(validation_loader, unit = 'batch', disable = self.cfg.contrastive_pretraining.tqdm_disabled) as tepoch :
+                        for batch_index_val, batch_val in enumerate(tepoch) :
+
+                            inputs = batch_val[0].squeeze(1).float().to(self.device)
+                            labels = batch_val[1].squeeze(1).float().to(self.device)
+                            
+                            labels = losses.transform_mask_for_dice_loss(labels, batch_val, num_classes=self.cfg.contrastive_pretraining.n_classes).to(self.device)
+
+                            logits = self.finetuning_layer(self.model(inputs))
+                            
+                            batch_loss_validation = self.evaluation_loss(logits, labels)
+                            val_loss.append(batch_loss_validation.item())
+
+                            #Logging
+                            tepoch.set_description(f"Epoch {epoch}")
+                            tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')
+                            
+                        avg_val_losses.append(np.average(val_loss))
+
+                        if len(avg_val_losses) == 1 :
+                            #torch.save(self.model.state_dict(), self.cfg.contrastive_pretraining.save_path_backbone.split(".")[0]+f"_bl_{k}.pth")
+                            #torch.save(self.finetuning_layer.state_dict(), self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_bl_{k}.pth")
+                            # torch.save(self.model.state_dict(), self.cfg.contrastive_pretraining.save_path_outconv_layer)
+                            pass
+                        else :
+                            self.save_best_model(avg_val_losses, self.model, self.cfg.contrastive_pretraining.save_path_backbone.split(".")[0]+f"_bl_{k}.pth")
+                            self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_bl_{k}.pth")
                             
                 if self.early_stopping(avg_val_losses) : 
                     print(f'Fine Tuning Training Early Stopping : Epoch n° {epoch}')

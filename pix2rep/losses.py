@@ -3,7 +3,8 @@ import torch.nn.functional as F
 
 import einops as ops
 
-import utils
+# import utils
+from . import utils
 
 
 def transform_mask_for_dice_loss(labels, batch, num_classes = 4) :

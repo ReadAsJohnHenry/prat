@@ -2,7 +2,8 @@
 tqdm_disabled: False
 
 # Supervised Learning Parameters
-num_epochs: 200
+# num_epochs: 200
+num_epochs: 100
 eval_frequency: 5
 n_channels: 1
 n_classes: 4
@@ -35,8 +36,10 @@ max_crop: 0.33
 training_loader_CL: training_loader_CL
 validation_loader_CL: validation_loader_CL
 
-save_path_backbone: "/media/data/MSc_students_accounts/maxime/models/weights_backbone_CL_best_model.pth"
-save_path_outconv_layer: "/media/data/MSc_students_accounts/maxime/models/weights_outconv_layer_CL_best_model.pth" 
+# save_path_backbone: "/media/data/MSc_students_accounts/maxime/models/weights_backbone_CL_best_model.pth"
+save_path_backbone: "hanyu/test1/weights_backbone_CL_best_model.pth"
+# save_path_outconv_layer: "/media/data/MSc_students_accounts/maxime/models/weights_outconv_layer_CL_best_model.pth" 
+save_path_outconv_layer: "hanyu/test1/weights_outconv_layer_CL_best_model.pth" 
 
 weights_backbone_load_path: null  
 weights_ft_layer_load_path: null 

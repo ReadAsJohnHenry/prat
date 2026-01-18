@@ -1,0 +1,17 @@
+Pretrained
+Traceback (most recent call last):
+  File "/users/nfs/Etu9/21413629/pix2rep/scripts/test_pix2rep.py", line 51, in <module>
+    cl_model.load_backbone_model(cfg.contrastive_pretraining.save_path_backbone)
+  File "/users/nfs/Etu9/21413629/pix2rep/pix2rep/CL_model.py", line 75, in load_backbone_model
+    self.model.load_state_dict(torch.load(weights_load_path))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/users/nfs/Etu9/21413629/pix2rep_env/lib/python3.11/site-packages/torch/serialization.py", line 1484, in load
+    with _open_file_like(f, "rb") as opened_file:
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/users/nfs/Etu9/21413629/pix2rep_env/lib/python3.11/site-packages/torch/serialization.py", line 759, in _open_file_like
+    return _open_file(name_or_buffer, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/users/nfs/Etu9/21413629/pix2rep_env/lib/python3.11/site-packages/torch/serialization.py", line 740, in __init__
+    super().__init__(open(name, mode))
+                     ^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] Aucun fichier ou dossier de ce type: 'hanyu/test1/weights_backbone_CL_best_model.pth'
