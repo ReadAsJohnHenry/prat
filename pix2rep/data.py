@@ -133,7 +133,7 @@ class Partially_Supervised_Loaders() :
         self.slices_per_groups = self.get_slices_per_groups()
 
         self.g = torch.Generator()
-        self.g.manual_seed(999)
+        self.g.manual_seed(42)
     
     def get_patients_ids_per_group(self) : 
 
@@ -242,7 +242,7 @@ class Partially_Supervised_Loaders() :
     
     def build_loaders(self, k=None) : 
 
-        self.g.manual_seed(999)
+        self.g.manual_seed(42)
 
         ########### Preprocessing ###########
 
@@ -328,7 +328,7 @@ class Partially_Supervised_Loaders() :
 
     def build_loaders_for_CL_pretraining(self) : 
 
-        self.g.manual_seed(999)
+        self.g.manual_seed(42)
 
         ########### Preprocessing ###########
 
@@ -470,11 +470,11 @@ class CustomDataset_CL(Dataset):
         if self.transform is not None:
             original_rng_state = torch.get_rng_state()
 
-            seed_A = 999 + idx
+            seed_A = 42 + idx
             torch.manual_seed(seed_A)
             view_1 = self.transform(view_1)
 
-            seed_B = 999 + idx + 10000
+            seed_B = 42 + idx + 10000
             torch.manual_seed(seed_B)
             view_2 = self.transform(view_2)
 
