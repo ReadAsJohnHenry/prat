@@ -111,3 +111,93 @@ class UNet(nn.Module):
         x = self.up5(x, x1)
         # logits = self.outc(x)
         return x
+    
+class AttentionGate(nn.Module):
+    def __init__(self, F_g, F_l, F_int):
+        super(AttentionGate, self).__init__()
+        # Gate signal from deeper layer
+        self.W_g = nn.Sequential(
+            nn.Conv2d(F_g, F_int, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(F_int)
+        )
+        # Skip connection from encoder
+        self.W_x = nn.Sequential(
+            nn.Conv2d(F_l, F_int, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(F_int)
+        )
+        # Fusion path
+        self.psi = nn.Sequential(
+            nn.Conv2d(F_int, 1, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(1),
+            nn.Sigmoid()
+        )
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, g, x):
+        g1 = self.W_g(g)
+        x1 = self.W_x(x)
+        psi = self.relu(g1 + x1)
+        psi = self.psi(psi)
+        return x * psi # Return weighted features
+    
+class AttentionUNet(nn.Module):
+    def __init__(self, n_channels, n_features_map, bilinear=False):
+        super(AttentionUNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_features_map = n_features_map
+        self.bilinear = bilinear
+
+        self.inc = DoubleConv(n_channels, 64)
+        self.down1 = Down(64, 128)
+        self.down2 = Down(128, 256)
+        self.down3 = Down(256, 512)
+        self.down4 = Down(512, 1024)
+        factor = 2 if bilinear else 1
+        self.down5 = Down(1024, 2048 // factor)
+
+        # Attention Gates
+        self.att1 = AttentionGate(F_g=1024//factor, F_l=1024, F_int=512)
+        self.att2 = AttentionGate(F_g=512//factor, F_l=512, F_int=256)
+        self.att3 = AttentionGate(F_g=256//factor, F_l=256, F_int=128)
+        self.att4 = AttentionGate(F_g=128//factor, F_l=128, F_int=64)
+        self.att5 = AttentionGate(F_g=n_features_map, F_l=64, F_int=32)
+
+        # Decoder
+        self.up1 = Up(2048, 1024 // factor, bilinear)
+        self.up2 = Up(1024, 512 // factor, bilinear)
+        self.up3 = Up(512, 256 // factor, bilinear)
+        self.up4 = Up(256, 128 // factor, bilinear)
+        self.up5 = Up(128, n_features_map, bilinear)
+
+    def forward(self, x):
+        # Encoder 
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+        x6 = self.down5(x5)
+
+        # Decoder + Attention Gates
+
+        x = self.up1.up(x6) 
+        x5_att = self.att1(g=x, x=x5)
+        x = self.up1.conv(torch.cat([x5_att, x], dim=1))
+
+        x = self.up2.up(x)
+        x4_att = self.att2(g=x, x=x4)
+        x = self.up2.conv(torch.cat([x4_att, x], dim=1))
+
+        x = self.up3.up(x)
+        x3_att = self.att3(g=x, x=x3)
+        x = self.up3.conv(torch.cat([x3_att, x], dim=1))
+
+        x = self.up4.up(x)
+        x2_att = self.att4(g=x, x=x2)
+        x = self.up4.conv(torch.cat([x2_att, x], dim=1))
+
+        x = self.up5.up(x)
+        x1_att = self.att5(g=x, x=x1)
+        x = self.up5.conv(torch.cat([x1_att, x], dim=1))
+
+        return x
