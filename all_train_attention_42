@@ -12,8 +12,8 @@ Traceback (most recent call last):
   File "/users/nfs/Etu9/21413629/pix2rep_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
     return forward_call(*args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/users/nfs/Etu9/21413629/pix2rep/pix2rep/models/U_Net_CL.py", line 200, in forward
-    x1_att = self.att5(g=x, x=x1)
+  File "/users/nfs/Etu9/21413629/pix2rep/pix2rep/models/U_Net_CL.py", line 193, in forward
+    x4_att = self.att2(g=x, x=x4)
              ^^^^^^^^^^^^^^^^^^^^
   File "/users/nfs/Etu9/21413629/pix2rep_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
     return self._call_impl(*args, **kwargs)
@@ -45,4 +45,4 @@ Traceback (most recent call last):
   File "/users/nfs/Etu9/21413629/pix2rep_env/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 543, in _conv_forward
     return F.conv2d(
            ^^^^^^^^^
-RuntimeError: Given groups=1, weight of size [32, 1024, 1, 1], expected input[8, 64, 128, 128] to have 1024 channels, but got 64 channels instead
+RuntimeError: Given groups=1, weight of size [256, 1024, 1, 1], expected input[8, 512, 16, 16] to have 1024 channels, but got 512 channels instead
