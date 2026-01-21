@@ -439,8 +439,8 @@ class CL_Model:
                         avg_val_losses.append(np.average(val_loss))
 
                         if len(avg_val_losses) == 1 :
-                            #torch.save(self.model.state_dict(), self.cfg.contrastive_pretraining.save_path_backbone.split(".")[0]+f"_bl_{k}.pth")
-                            #torch.save(self.finetuning_layer.state_dict(), self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_bl_{k}.pth")
+                            torch.save(self.model.state_dict(), self.cfg.contrastive_pretraining.save_path_backbone.split(".")[0]+f"_bl_{k}.pth")
+                            torch.save(self.finetuning_layer.state_dict(), self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_bl_{k}.pth")
                             # torch.save(self.model.state_dict(), self.cfg.contrastive_pretraining.save_path_outconv_layer)
                             pass
                         else :
