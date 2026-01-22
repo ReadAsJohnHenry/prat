@@ -27,12 +27,14 @@ class ACDC_dataset:
         patients_info = {'training' : {},
                          'testing' : {}}
 
-        for train_or_test_folder in sorted(os.listdir(self.data_folder_path)) :
+        # for train_or_test_folder in sorted(os.listdir(self.data_folder_path)) :
+        for train_or_test_folder in os.listdir(self.data_folder_path) :
             train_or_test_folder_path = os.path.join(self.data_folder_path, train_or_test_folder)
             
             if os.path.isdir(train_or_test_folder_path) :
 
-                for patient_folder in sorted(os.listdir(train_or_test_folder_path)) :
+                # for patient_folder in sorted(os.listdir(train_or_test_folder_path)) :
+                for patient_folder in os.listdir(train_or_test_folder_path) :
                     patient_folder_path = os.path.join(train_or_test_folder_path, patient_folder)
 
                     if os.path.isdir(patient_folder_path) :
@@ -55,17 +57,20 @@ class ACDC_dataset:
         files_paths = {'training' : [],
                         'testing' : []}
 
-        for train_or_test_folder in sorted(os.listdir(self.data_folder_path)) :
+        # for train_or_test_folder in sorted(os.listdir(self.data_folder_path)) :
+        for train_or_test_folder in os.listdir(self.data_folder_path) :
             train_or_test_folder_path = os.path.join(self.data_folder_path, train_or_test_folder)
             
             if os.path.isdir(train_or_test_folder_path) :
 
-                for patient_folder in sorted(os.listdir(train_or_test_folder_path)) :
+                # for patient_folder in sorted(os.listdir(train_or_test_folder_path)) :
+                for patient_folder in os.listdir(train_or_test_folder_path) :
                     patient_folder_path = os.path.join(train_or_test_folder_path, patient_folder)
 
                     if os.path.isdir(patient_folder_path) :
 
-                        for patient_file in sorted(glob.glob(os.path.join(patient_folder_path, f'patient???_frame??.nii.gz'))):
+                        # for patient_file in sorted(glob.glob(os.path.join(patient_folder_path, f'patient???_frame??.nii.gz'))):
+                        for patient_file in glob.glob(os.path.join(patient_folder_path, f'patient???_frame??.nii.gz')):
                             files_paths[train_or_test_folder].append(patient_file)
         
         return files_paths
@@ -81,7 +86,8 @@ class ACDC_dataset:
 
         files_paths = self.retrieve_all_files_path()
     
-        for train_or_test in sorted(files_paths.keys()) :
+        # for train_or_test in sorted(files_paths.keys()) :
+        for train_or_test in files_paths.keys() :
             for file_path in files_paths[train_or_test] : 
 
                 base_file = file_path.split('.nii.gz')[0]
