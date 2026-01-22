@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     
     #Xtr = [1, 2, 5, 10, 20, 50, 100]
-    Xtr = [1, 50, 100]
+    #Xtr = [1, 50, 100]
     Xtr = [1]
     for k in Xtr:
         for j in range(3):
