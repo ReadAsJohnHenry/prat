@@ -52,7 +52,7 @@ if __name__ == '__main__':
     test_losses, test_losses_detailed = cl_model.run_test_volume(test_volume_loader)
     print(f"Avg. Dice (ACDC): {1 - test_losses}")
 
-    Xtr = [2, 5, 10, 20, 50, 100]
+    Xtr = [1, 2, 5, 10, 20, 50, 100]
     #Xtr = [1]
     for k in Xtr:
         # limited_subjects_dic = limit_labeled_data(subjects_dic, k)
