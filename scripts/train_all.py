@@ -60,9 +60,9 @@ if __name__ == '__main__':
     # avg_train_losses, avg_val_losses = cl_model.run_training(training_loader_CL, validation_loader_CL)
 
     
-    #Xtr = [1, 2, 5, 10, 20, 50, 100]
+    Xtr = [1, 2, 5, 10, 20, 50, 100]
     #Xtr = [1, 50, 100]
-    Xtr = [1]
+    #Xtr = [1]
     for k in Xtr:
         # for j in range(3):
         for j in range(1):
