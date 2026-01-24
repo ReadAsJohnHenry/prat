@@ -49,7 +49,7 @@ if __name__ == '__main__':
     print("Pretrained")
     cl_model = CL_model.CL_Model(cfg)
     cl_model.load_backbone_model(cfg.contrastive_pretraining.save_path_backbone)
-    test_losses, test_losses_detailed = cl_model.run_test_volume(test_volume_loader)
+    #test_losses, test_losses_detailed = cl_model.run_test_volume(test_volume_loader)
     print(f"Avg. Dice (ACDC): {1 - test_losses}")
 
     Xtr = [1, 2, 5, 10, 20, 50, 100]
