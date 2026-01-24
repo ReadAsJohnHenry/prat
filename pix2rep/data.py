@@ -474,16 +474,16 @@ class CustomDataset_CL(Dataset):
         view_2 = subject['mri_slice_view_2'].data
 
         if self.transform is not None:
-            original_rng_state = torch.get_rng_state()
+            # original_rng_state = torch.get_rng_state()
 
-            seed_A = 42 + idx
-            torch.manual_seed(seed_A)
+            # seed_A = 42 + idx
+            # torch.manual_seed(seed_A)
             view_1 = self.transform(view_1)
 
-            seed_B = 42 + idx + 10000
-            torch.manual_seed(seed_B)
+            # seed_B = 42 + idx + 10000
+            # torch.manual_seed(seed_B)
             view_2 = self.transform(view_2)
 
-            torch.set_rng_state(original_rng_state)
+            # torch.set_rng_state(original_rng_state)
 
         return view_1, view_2
