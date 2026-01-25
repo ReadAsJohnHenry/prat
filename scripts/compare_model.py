@@ -5,7 +5,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_root)
 
 import torch
-from torchsummary import summary
+from torchinfo import summary
 from pix2rep.models.U_Net_CL import UNet, AttentionUNet
 
 def compare_layer_parameters(model_base, model_att):
