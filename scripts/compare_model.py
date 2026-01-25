@@ -8,10 +8,11 @@ import torch
 from pix2rep.models.U_Net_CL import UNet, AttentionUNet
 
 def check_architecture():
-    dummy_input = torch.randn(1, 1, 128, 128).to("cuda:2")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    dummy_input = torch.randn(1, 1, 128, 128).to(device)
     
-    baseline = UNet(n_channels=1, n_features_map=64).to("cuda:2")
-    att_model = AttentionUNet(n_channels=1, n_features_map=64).to("cuda:2")
+    baseline = UNet(n_channels=1, n_features_map=64).to(device)
+    att_model = AttentionUNet(n_channels=1, n_features_map=64).to(device)
     
     out_base = baseline(dummy_input)
     out_att = att_model(dummy_input)
