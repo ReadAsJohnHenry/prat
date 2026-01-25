@@ -57,15 +57,15 @@ if __name__ == '__main__':
     cl_model = CL_model.CL_Model(cfg)
 
     # Run pre-training
-    # avg_train_losses, avg_val_losses = cl_model.run_training(training_loader_CL, validation_loader_CL)
+    avg_train_losses, avg_val_losses = cl_model.run_training(training_loader_CL, validation_loader_CL)
 
     
     Xtr = [1, 2, 5, 10, 20, 50, 100]
     #Xtr = [1, 50, 100]
     #Xtr = [1]
     for k in Xtr:
-        # for j in range(3):
-        for j in range(1):
+        for j in range(3):
+        # for j in range(1):
             # limited_subjects_dic = limit_labeled_data(subjects_dic, k)
             
             fix_all_seeds(42)
