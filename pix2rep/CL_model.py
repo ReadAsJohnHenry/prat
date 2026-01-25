@@ -30,8 +30,8 @@ class CL_Model:
                                             reduction = 'mean',
                                             softmax = True).to(self.device)
 
-        self.model = U_Net_CL.UNet(self.cfg.contrastive_pretraining.n_channels, self.cfg.contrastive_pretraining.n_features_map).to(self.device) 
-        # self.model = U_Net_CL.AttentionUNet(self.cfg.contrastive_pretraining.n_channels, self.cfg.contrastive_pretraining.n_features_map).to(self.device) 
+        # self.model = U_Net_CL.UNet(self.cfg.contrastive_pretraining.n_channels, self.cfg.contrastive_pretraining.n_features_map).to(self.device) 
+        self.model = U_Net_CL.AttentionUNet(self.cfg.contrastive_pretraining.n_channels, self.cfg.contrastive_pretraining.n_features_map).to(self.device) 
         self.finetuning_layer =  U_Net_CL.OutConv(self.cfg.contrastive_pretraining.n_features_map, self.cfg.contrastive_pretraining.n_classes).to(self.device)
 
         if self.cfg.contrastive_pretraining.projection_head_depth == 0 :
