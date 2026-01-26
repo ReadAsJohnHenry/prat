@@ -139,7 +139,7 @@ class Partially_Supervised_Loaders() :
         self.slices_per_groups = self.get_slices_per_groups()
 
         self.g = torch.Generator()
-        self.g.manual_seed(42)
+        self.g.manual_seed(3407)
     
     def get_patients_ids_per_group(self) : 
 
@@ -248,7 +248,7 @@ class Partially_Supervised_Loaders() :
     
     def build_loaders(self, k=None) : 
 
-        self.g.manual_seed(42)
+        self.g.manual_seed(3407)
 
         ########### Preprocessing ###########
 
@@ -334,7 +334,7 @@ class Partially_Supervised_Loaders() :
 
     def build_loaders_for_CL_pretraining(self) : 
 
-        self.g.manual_seed(42)
+        self.g.manual_seed(3407)
 
         ########### Preprocessing ###########
 
