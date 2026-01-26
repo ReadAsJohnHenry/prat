@@ -199,7 +199,7 @@ class AttentionUNet(nn.Module):
 
         x = self.up2.up(x)
         if store_att_maps:
-            x4_att, m = self.att1(g=x, x=x4, return_coefficients=True)
+            x4_att, m = self.att2(g=x, x=x4, return_coefficients=True)
             att_maps.append(m)
         else:
             x4_att = self.att2(g=x, x=x4)
@@ -207,7 +207,7 @@ class AttentionUNet(nn.Module):
 
         x = self.up3.up(x)
         if store_att_maps:
-            x3_att, m = self.att1(g=x, x=x3, return_coefficients=True)
+            x3_att, m = self.att3(g=x, x=x3, return_coefficients=True)
             att_maps.append(m)
         else:
             x3_att = self.att3(g=x, x=x3)
@@ -215,7 +215,7 @@ class AttentionUNet(nn.Module):
 
         x = self.up4.up(x)
         if store_att_maps:
-            x2_att, m = self.att1(g=x, x=x2, return_coefficients=True)
+            x2_att, m = self.att4(g=x, x=x2, return_coefficients=True)
             att_maps.append(m)
         else:
             x2_att = self.att4(g=x, x=x2)
@@ -223,7 +223,7 @@ class AttentionUNet(nn.Module):
 
         x = self.up5.up(x)
         if store_att_maps:
-            x1_att, m = self.att1(g=x, x=x1, return_coefficients=True)
+            x1_att, m = self.att5(g=x, x=x1, return_coefficients=True)
             att_maps.append(m)
         else:
             x1_att = self.att5(g=x, x=x1)
