@@ -3,89 +3,93 @@ import sys
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_root)
+
 import torch
 import torch.nn as nn
+# Import from your model file
 from pix2rep.models.U_Net_CL import UNet, AttentionUNet
 
-def run_dynamic_architecture_audit(model_base, model_att, input_size=(1, 1, 128, 128)):
-    """
-    Dynamically captures real output shapes and parameters using forward hooks.
-    This ensures all layers (including Up-layers with skip connections) are verified.
-    """
+def get_norm_layer(module):
+    for m in module.modules():
+        if isinstance(m, (nn.BatchNorm2d, nn.InstanceNorm2d, nn.GroupNorm)):
+            return m.__class__.__name__
+    return "None"
+
+def run_custom_audit(model_base, model_att, input_size=(1, 1, 128, 128)):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_base.to(device).eval()
     model_att.to(device).eval()
 
-    # Containers to store captured metadata
-    base_metadata = {}
-    att_metadata = {}
-
-    # Hook function to capture real-time output shapes
-    def capture_shape_hook(layer_name, storage):
+    base_shapes, att_shapes = {}, {}
+    
+    def get_hook(name, storage):
         def hook(module, input, output):
-            # If the model returns a tuple (e.g., logits + att_maps), take the first element
-            if isinstance(output, tuple):
-                storage[layer_name] = list(output[0].shape)
-            else:
-                storage[layer_name] = list(output.shape)
+            storage[name] = list(output.shape) if not isinstance(output, tuple) else list(output[0].shape)
         return hook
 
-    # Register hooks for all functional blocks
-    blocks = ['inc', 'down1', 'down2', 'down3', 'down4', 'up1', 'up2', 'up3', 'up4', 'outc']
+    # --- MATCHING YOUR CLASS DEFINITIONS ---
+    # Encoder blocks + Bottleneck (down5) + Decoder blocks
+    blocks = ['inc', 'down1', 'down2', 'down3', 'down4', 'down5', 
+              'up1', 'up2', 'up3', 'up4', 'up5']
+    
+    # Matching Attention Gates (Only exist in AttentionUNet)
+    att_gates = ['att1', 'att2', 'att3', 'att4', 'att5']
+
+    hooks = []
     for name in blocks:
         if hasattr(model_base, name):
-            getattr(model_base, name).register_forward_hook(capture_shape_hook(name, base_metadata))
+            hooks.append(getattr(model_base, name).register_forward_hook(get_hook(name, base_shapes)))
         if hasattr(model_att, name):
-            getattr(model_att, name).register_forward_hook(capture_shape_hook(name, att_metadata))
+            hooks.append(getattr(model_att, name).register_forward_hook(get_hook(name, att_shapes)))
 
-    # Execute a real forward pass with dummy data
+    # Execute forward pass
     dummy_input = torch.randn(input_size).to(device)
     with torch.no_grad():
         _ = model_base(dummy_input)
         _ = model_att(dummy_input)
 
-    # Printing the Comprehensive Comparison Table
+    # Print Table
     header = f"{'Block Name':<12} | {'Base Output Shape':<22} | {'Attn Output Shape':<22} | {'Base Params':<15} | {'Attn Params':<15}"
-    print("\n" + "="*95)
-    print("LAYER-BY-LAYER ARCHITECTURAL CONSISTENCY AUDIT")
-    print("="*95)
+    print("\n" + "="*100)
+    print(f"UNET ARCHITECTURE AUDIT (n_features_map={model_base.n_features_map})")
+    print("="*100)
     print(header)
     print("-" * len(header))
 
     for name in blocks:
-        if name in base_metadata and name in att_metadata:
-            m_b = getattr(model_base, name)
-            m_a = getattr(model_att, name)
-            
-            # Real parameter counts
-            p_b = sum(p.numel() for p in m_b.parameters())
-            p_a = sum(p.numel() for p in m_a.parameters())
-            
-            print(f"{name:<12} | {str(base_metadata[name]):<22} | {str(att_metadata[name]):<22} | {p_b:<15,} | {p_a:<15,}")
+        # Get modules safely
+        m_b = getattr(model_base, name, None)
+        m_a = getattr(model_att, name, None)
+        
+        p_b = sum(p.numel() for p in m_b.parameters()) if m_b else 0
+        p_a = sum(p.numel() for p in m_a.parameters()) if m_a else 0
+        
+        s_b = str(base_shapes.get(name, "N/A"))
+        s_a = str(att_shapes.get(name, "N/A"))
+        
+        print(f"{name:<12} | {s_b:<22} | {s_a:<22} | {p_b:<15,} | {p_a:<15,}")
 
-    # Global Statistics
+    # Add a special row for Attention Gates alone
+    total_att_gate_p = sum(sum(p.numel() for p in getattr(model_att, g).parameters()) for g in att_gates)
+    print("-" * len(header))
+    print(f"{'Attn Gates':<12} | {'[Combined Overheads]':<22} | {'---':<22} | {'0':<15} | {total_att_gate_p:<15,}")
+    
+    # Overall
     total_b = sum(p.numel() for p in model_base.parameters())
     total_a = sum(p.numel() for p in model_att.parameters())
-    
     print("-" * len(header))
-    print(f"{'TOTAL MODEL':<12} | {'Identical Resolution':<22} | {'Identical Res.':<22} | {total_b:<15,} | {total_a:<15,}")
-    print("="*95)
-    print(f"REPORTABLE SUMMARY:")
-    print(f" - Absolute Parameter Difference: {total_a - total_b:,}")
-    print(f" - Relative Parameter Overhead:   {((total_a - total_b) / total_b):.2%}")
-    print("="*95)
+    print(f"TOTAL MODEL  | Baseline: {total_b:,} | Attention: {total_a:,} | Overhead: {((total_a-total_b)/total_b):.2%}")
+    print("="*100)
+    
+    for h in hooks: h.remove()
 
-# --- EXECUTION BLOCK ---
 if __name__ == "__main__":
-    # Settings based on your real training config
+    # Settings
     N_CHANNELS = 1
     N_FEATURES_MAP = 1024 
     
-    print(f"Auditing architectures with n_features_map={N_FEATURES_MAP}...")
-    
-    # Initialize real models
+    # Assuming your baseline UNet class has the same 5-layer downsampling structure
     baseline = UNet(n_channels=N_CHANNELS, n_features_map=N_FEATURES_MAP)
     proposed = AttentionUNet(n_channels=N_CHANNELS, n_features_map=N_FEATURES_MAP)
     
-    # Run the dynamic audit
-    run_dynamic_architecture_audit(baseline, proposed)
+    run_custom_audit(baseline, proposed)
