@@ -85,4 +85,4 @@ if __name__ == "__main__":
     baseline = UNet(n_channels=N_CHANNELS, n_features_map=N_FEATURES_MAP)
     proposed = AttentionUNet(n_channels=N_CHANNELS, n_features_map=N_FEATURES_MAP)
     
-    run_custom_audit(baseline, proposed)
+    run_final_parity_audit(baseline, proposed)
