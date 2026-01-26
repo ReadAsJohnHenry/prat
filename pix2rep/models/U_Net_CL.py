@@ -177,7 +177,7 @@ class AttentionUNet(nn.Module):
         self.up4 = Up(256, 128 // factor, bilinear)
         self.up5 = Up(128, n_features_map, bilinear)
 
-    def forward(self, x, store_att_maps=True):
+    def forward(self, x, store_att_maps=False):
         # Encoder 
         x1 = self.inc(x)
         x2 = self.down1(x1)
