@@ -9,61 +9,72 @@ from pix2rep.models.U_Net_CL import UNet, AttentionUNet
 import torch
 import torch.nn as nn
 
-def detailed_architecture_comparison(model_base, model_att, input_size=(1, 1, 128, 128)):
+def get_norm_layer(module):
+    """Helper to find the normalization type used in a block."""
+    for m in module.modules():
+        if isinstance(m, (nn.BatchNorm2d, nn.InstanceNorm2d, nn.GroupNorm)):
+            return m.__class__.__name__
+    return "None"
+
+def run_comprehensive_audit(model_base, model_att, input_size=(1, 1, 128, 128)):
     """
-    Dynamically captures shapes and compares parameters across models.
-    Works for any input size provided.
+    Performs a real forward pass to extract layer-wise details.
+    This replaces Yes/No with actual values.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # dummy_input = torch.randn(input_size).to(device)
+    model_base.to(device).eval()
+    model_att.to(device).eval()
     
-    header = f"{'Block':<12} | {'Output Shape':<20} | {'Base Params':<12} | {'Attn Params':<12} | {'Norm Method'}"
+    # Header
+    header = f"{'Block Name':<12} | {'Output Shape':<22} | {'Base Params':<15} | {'Attn Params':<15} | {'Norm Method'}"
     print(header)
     print("-" * len(header))
 
-    blocks = ['inc', 'down1', 'down2', 'down3', 'down4', 'up1', 'up2', 'up3', 'up4', 'outc']
-    
-    # Track baseline shapes by running a dummy forward pass if needed, 
-    # but for simplicity, we compare the block-level parity here.
-    for name in blocks:
-        if hasattr(model_base, name) and hasattr(model_att, name):
-            m_base = getattr(model_base, name)
-            m_att = getattr(model_att, name)
-            
-            # 1. Parameter counts are independent of input size
-            p_base = sum(p.numel() for p in m_base.parameters())
-            p_att = sum(p.numel() for p in m_att.parameters())
-            
-            # 2. Check Norm Method
-            norm_type = "None"
-            for m in m_base.modules():
-                if isinstance(m, (nn.BatchNorm2d, nn.InstanceNorm2d, nn.GroupNorm)):
-                    norm_type = m.__class__.__name__
-                    break
-            
-            # 3. Dynamic Shape Capture (Optional logic)
-            # In a real UNet, shapes halve at each 'down' and double at each 'up'.
-            # As long as both models use the same input, this parity is maintained.
-            print(f"{name:<12} | {'Same as Input':<20} | {p_base:<12,} | {p_att:<12,} | {norm_type}")
+    # To capture real shapes, we need to handle the forward pass carefully
+    # We will use a dummy input and track its transformation through the encoder
+    x_b = torch.randn(input_size).to(device)
+    x_a = torch.randn(input_size).to(device)
 
-    # Global Summary
-    total_base = sum(p.numel() for p in model_base.parameters())
-    total_att = sum(p.numel() for p in model_att.parameters())
+    # List of encoder blocks (these can be run sequentially for shape extraction)
+    encoder_blocks = ['inc', 'down1', 'down2', 'down3', 'down4']
+    
+    # Store intermediate shapes for the report
+    for name in encoder_blocks:
+        m_b = getattr(model_base, name)
+        m_a = getattr(model_att, name)
+        
+        # Real Forward Pass to get Shape
+        with torch.no_grad():
+            x_b = m_b(x_b)
+            x_a = m_a(x_a)
+        
+        # Get Parameter Counts
+        p_b = sum(p.numel() for p in m_base.parameters())
+        p_a = sum(p.numel() for p in m_att.parameters())
+        
+        # Get Norm Method
+        norm = get_norm_layer(m_b)
+        
+        print(f"{name:<12} | {str(list(x_b.shape)):<22} | {p_base:<15,} | {p_attn:<15,} | {norm}")
+
     print("-" * len(header))
-    print(f"TOTAL PARAMS | Baseline: {total_base:,} | Attention: {total_att:,}")
-    print(f"RELATIVE PARAMETER OVERHEAD: {((total_att - total_base) / total_base):.2%}")
-
-def verify_architecture_equivalence():
-    """
-    Validates that the proposed AttentionUNet maintains the same 
-    structural integrity as the baseline UNet.
-    """
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # input_size = (1, 128, 128) # Standard ACDC input patch size
+    print(f"{'TOTAL':<12} | {'[1, 1, 128, 128]':<22} | {sum(p.numel() for p in model_base.parameters()):<15,} | {sum(p.numel() for p in model_att.parameters()):<15,} | {'---'}")
     
-    baseline = UNet(n_channels=1, n_features_map=1024).to(device)
-    att_model = AttentionUNet(n_channels=1, n_features_map=1024).to(device)
+    # Final Overhead Check
+    total_b = sum(p.numel() for p in model_base.parameters())
+    total_a = sum(p.numel() for p in model_att.parameters())
+    print(f"\n[Summary] Total Parameter Overhead: {((total_a - total_b) / total_b):.2%}")
 
-    detailed_architecture_comparison(baseline, att_model)
-
-verify_architecture_equivalence()
+# --- MAIN EXECUTION ---
+if __name__ == "__main__":
+    # CONFIGURATION: n_features_map=1024 as per your setup
+    N_CHANNELS = 1
+    N_FEATURES_MAP = 1024 
+    
+    # Initialize models
+    print(f"Initializing models with n_features_map={N_FEATURES_MAP}...")
+    baseline = UNet(n_channels=N_CHANNELS, n_features_map=N_FEATURES_MAP)
+    proposed = AttentionUNet(n_channels=N_CHANNELS, n_features_map=N_FEATURES_MAP)
+    
+    # Run the audit
+    run_comprehensive_audit(baseline, proposed)
