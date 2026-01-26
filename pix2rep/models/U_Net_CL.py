@@ -133,12 +133,15 @@ class AttentionGate(nn.Module):
         )
         self.relu = nn.ReLU(inplace=True)
 
-    def forward(self, g, x):
+    def forward(self, g, x, return_coefficients=False):
         g1 = self.W_g(g)
         x1 = self.W_x(x)
         psi = self.relu(g1 + x1)
         psi = self.psi(psi)
-        return x * psi # Return weighted features
+        out = x * psi
+        if return_coefficients:
+            return out, psi
+        return out
     
 class AttentionUNet(nn.Module):
     def __init__(self, n_channels, n_features_map, bilinear=False):
@@ -174,7 +177,7 @@ class AttentionUNet(nn.Module):
         self.up4 = Up(256, 128 // factor, bilinear)
         self.up5 = Up(128, n_features_map, bilinear)
 
-    def forward(self, x):
+    def forward(self, x, store_att_maps=True):
         # Encoder 
         x1 = self.inc(x)
         x2 = self.down1(x1)
@@ -184,25 +187,48 @@ class AttentionUNet(nn.Module):
         x6 = self.down5(x5)
 
         # Decoder + Attention Gates
+        att_maps = []
 
         x = self.up1.up(x6) 
-        x5_att = self.att1(g=x, x=x5)
+        if store_att_maps:
+            x5_att, m = self.att1(g=x, x=x5, return_coefficients=True)
+            att_maps.append(m)
+        else:
+            x5_att = self.att1(g=x, x=x5)
         x = self.up1.conv(torch.cat([x5_att, x], dim=1))
 
         x = self.up2.up(x)
-        x4_att = self.att2(g=x, x=x4)
+        if store_att_maps:
+            x4_att, m = self.att1(g=x, x=x4, return_coefficients=True)
+            att_maps.append(m)
+        else:
+            x4_att = self.att2(g=x, x=x4)
         x = self.up2.conv(torch.cat([x4_att, x], dim=1))
 
         x = self.up3.up(x)
-        x3_att = self.att3(g=x, x=x3)
+        if store_att_maps:
+            x3_att, m = self.att1(g=x, x=x3, return_coefficients=True)
+            att_maps.append(m)
+        else:
+            x3_att = self.att3(g=x, x=x3)
         x = self.up3.conv(torch.cat([x3_att, x], dim=1))
 
         x = self.up4.up(x)
-        x2_att = self.att4(g=x, x=x2)
+        if store_att_maps:
+            x2_att, m = self.att1(g=x, x=x2, return_coefficients=True)
+            att_maps.append(m)
+        else:
+            x2_att = self.att4(g=x, x=x2)
         x = self.up4.conv(torch.cat([x2_att, x], dim=1))
 
         x = self.up5.up(x)
-        x1_att = self.att5(g=x, x=x1)
+        if store_att_maps:
+            x1_att, m = self.att1(g=x, x=x1, return_coefficients=True)
+            att_maps.append(m)
+        else:
+            x1_att = self.att5(g=x, x=x1)
         x = self.up5.conv(torch.cat([x1_att, x], dim=1))
+
+        self.last_attention_maps = att_maps
 
         return x

@@ -9,6 +9,9 @@ import torch.nn.functional as F
 import torchio as tio
 import monai
 
+import matplotlib.pyplot as plt
+import os
+
 # import clean_code.pix2rep.utils as utils
 # import clean_code.pix2rep.losses as losses
 # from clean_code.pix2rep.models import U_Net_CL, MLP
@@ -67,6 +70,27 @@ class CL_Model:
         if self.cfg.contrastive_pretraining.weights_ft_layer_load_path != None : 
             self.finetuning_layer.load_state_dict(torch.load(self.cfg.contrastive_pretraining.weights_ft_layer_load_path))
             print('outconv loaded')
+
+    
+    def save_attention_visualization(self, image, attn_map, label, epoch, idx):
+        save_dir = os.path.join("hanyu/test1", "attention_viz")
+        os.makedirs(save_dir, exist_ok=True)
+        
+        fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+        
+        ax[0].imshow(image, cmap='gray')
+        ax[0].set_title("Input Image")
+        
+        im = ax[1].imshow(attn_map, cmap='jet')
+        ax[1].set_title(f"Attention Map (Epoch {epoch})")
+        plt.colorbar(im, ax=ax[1])
+        
+        ax[2].imshow(image, cmap='gray')
+        ax[2].imshow(attn_map, cmap='jet', alpha=0.4)
+        ax[2].set_title("Saliency Overlay")
+        
+        plt.savefig(os.path.join(save_dir, f"{label}_epoch_{epoch}_sample_{idx}.png"))
+        plt.close()
 
 
     def load_backbone_model(self, weights_load_path) :
@@ -285,6 +309,11 @@ class CL_Model:
                         else :
                             self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_lp_{k}.pth")
 
+                        attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                        raw_img = inputs[0, 0].cpu().numpy()
+                        
+                        self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val)
+
 
         return avg_train_losses, avg_val_losses
 
@@ -363,6 +392,11 @@ class CL_Model:
                         else :
                             self.save_best_model(avg_val_losses, self.model, self.cfg.contrastive_pretraining.save_path_backbone.split(".")[0]+f"_ft_{k}.pth")
                             self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_ft_{k}.pth")
+
+                        attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                        raw_img = inputs[0, 0].cpu().numpy()
+                        
+                        self.save_attention_visualization(raw_img, attn_map, "ft", epoch, batch_index_val)
                             
                 if self.early_stopping(avg_val_losses) : 
                     print(f'Fine Tuning Training Early Stopping : Epoch n° {epoch}')
@@ -446,7 +480,12 @@ class CL_Model:
                         else :
                             self.save_best_model(avg_val_losses, self.model, self.cfg.contrastive_pretraining.save_path_backbone.split(".")[0]+f"_bl_{k}.pth")
                             self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_bl_{k}.pth")
-                            
+                        
+                        attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                        raw_img = inputs[0, 0].cpu().numpy()
+                        
+                        self.save_attention_visualization(raw_img, attn_map, "bl", epoch, batch_index_val)
+
                 if self.early_stopping(avg_val_losses) : 
                     print(f'Fine Tuning Training Early Stopping : Epoch n° {epoch}')
                     break
