@@ -35,7 +35,7 @@ def fix_all_seeds(seed=42):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-fix_all_seeds(3407)
+fix_all_seeds(7)
 
 
 if __name__ == '__main__':
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     loaders_builder = data.Partially_Supervised_Loaders(dataset, all_slices, subjects_dic, cfg)
     training_loader_CL, validation_loader_CL = loaders_builder.build_loaders_for_CL_pretraining()
 
-    fix_all_seeds(3407)
+    fix_all_seeds(7)
     # Contrastive model
     cl_model = CL_model.CL_Model(cfg)
 
@@ -68,7 +68,7 @@ if __name__ == '__main__':
         # for j in range(1):
             # limited_subjects_dic = limit_labeled_data(subjects_dic, k)
             
-            fix_all_seeds(3407)
+            fix_all_seeds(7)
             loaders_builder = data.Partially_Supervised_Loaders(dataset, all_slices, subjects_dic, cfg)
             loaders = loaders_builder.build_loaders(k)
             training_loader, validation_loader = loaders[0], loaders[1]
