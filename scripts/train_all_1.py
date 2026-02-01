@@ -78,7 +78,7 @@ if __name__ == '__main__':
     cl_model = CL_model.CL_Model(cfg)
 
     # Run pre-training
-    avg_train_losses, avg_val_losses = cl_model.run_training(training_loader_CL, validation_loader_CL)
+    # avg_train_losses, avg_val_losses = cl_model.run_training(training_loader_CL, validation_loader_CL)
     
     reset_experiment(seed=7)
 
@@ -95,7 +95,18 @@ if __name__ == '__main__':
 
             loaders_builder = data.Partially_Supervised_Loaders(dataset, all_slices, subjects_dic, cfg)
             loaders = loaders_builder.build_loaders(k)
-            print(f"Run {j}, k={k}, Training on: {loaders[0].dataset.subjects[0].name}")
+
+            try:
+                subject_id = loaders[0].dataset.subjects[0].identifier
+            except AttributeError:
+                try:
+                    subject_id = loaders[0].dataset.subjects[0]['name']
+                except (AttributeError, KeyError):
+                    subject_id = "Unknown_Subject"
+
+            print(f"Run {j}, k={k}, Training on: {subject_id}")
+            # print(f"Run {j}, k={k}, Training on: {loaders[0].dataset.subjects[0].name}")
+
             training_loader, validation_loader = loaders[0], loaders[1]
 
             # Contrastive model
