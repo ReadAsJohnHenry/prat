@@ -35,7 +35,7 @@ def fix_all_seeds(seed=42):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-fix_all_seeds(7)
+fix_all_seeds(123)
 
 def reset_experiment(seed=42):
     import gc
@@ -73,25 +73,25 @@ if __name__ == '__main__':
     loaders_builder = data.Partially_Supervised_Loaders(dataset, all_slices, subjects_dic, cfg)
     training_loader_CL, validation_loader_CL = loaders_builder.build_loaders_for_CL_pretraining()
 
-    fix_all_seeds(7)
+    fix_all_seeds(123)
     # Contrastive model
     cl_model = CL_model.CL_Model(cfg)
 
     # Run pre-training
     avg_train_losses, avg_val_losses = cl_model.run_training(training_loader_CL, validation_loader_CL)
     
-    reset_experiment(seed=7)
+    reset_experiment(seed=123)
 
     
-    # Xtr = [1, 2, 5, 10, 20, 50, 100]
+    Xtr = [1, 2, 5, 10, 20, 50, 100]
     #Xtr = [1, 50, 100]
-    Xtr = [1]
+    # Xtr = [1]
     for k in Xtr:
         for j in range(3):
         # for j in range(1):
             # limited_subjects_dic = limit_labeled_data(subjects_dic, k)
             
-            reset_experiment(seed=7)
+            reset_experiment(seed=123)
 
             loaders_builder = data.Partially_Supervised_Loaders(dataset, all_slices, subjects_dic, cfg)
             loaders = loaders_builder.build_loaders(k)
