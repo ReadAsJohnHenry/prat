@@ -228,19 +228,21 @@ class CL_Model:
 
                             # Logging
                             tepoch.set_description(f"Epoch {epoch}")
-                            tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')       
-                            
+                            tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')  
+
+                            if epoch % 20 == 0 :     
+
+                                attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                                raw_img = view_1[0, 0].cpu().numpy()
+                                
+                                self.save_attention_visualization(raw_img, attn_map, "cl", epoch, batch_index_val)
+
                         avg_val_losses.append(np.average(val_loss))
                         
                         if len(avg_val_losses) == 1 :
                             torch.save(self.model.state_dict(), self.cfg.contrastive_pretraining.save_path_backbone)
                         else :
                             self.save_best_model(avg_val_losses, self.model, self.cfg.contrastive_pretraining.save_path_backbone)
-
-                        attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                        raw_img = view_1[0, 0].cpu().numpy()
-                        
-                        self.save_attention_visualization(raw_img, attn_map, "cl", epoch, batch_index_val)
 
 
         return avg_train_losses, avg_val_losses
@@ -306,6 +308,13 @@ class CL_Model:
                             #Logging
                             tepoch.set_description(f"Epoch {epoch}")
                             tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')
+
+                            if epoch % 10 == 0 :     
+
+                                attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                                raw_img = input[0, 0].cpu().numpy()
+                                
+                                self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val)
                             
                         avg_val_losses.append(np.average(val_loss))
 
@@ -313,11 +322,6 @@ class CL_Model:
                             torch.save(self.finetuning_layer.state_dict(), self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_lp_{k}.pth")
                         else :
                             self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_lp_{k}.pth")
-
-                        attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                        raw_img = inputs[0, 0].cpu().numpy()
-                        
-                        self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val)
 
 
         return avg_train_losses, avg_val_losses
@@ -388,6 +392,13 @@ class CL_Model:
                             #Logging
                             tepoch.set_description(f"Epoch {epoch}")
                             tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')
+
+                            if epoch % 10 == 0 :     
+
+                                attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                                raw_img = input[0, 0].cpu().numpy()
+                                
+                                self.save_attention_visualization(raw_img, attn_map, "ft", epoch, batch_index_val)
                             
                         avg_val_losses.append(np.average(val_loss))
 
@@ -397,11 +408,6 @@ class CL_Model:
                         else :
                             self.save_best_model(avg_val_losses, self.model, self.cfg.contrastive_pretraining.save_path_backbone.split(".")[0]+f"_ft_{k}.pth")
                             self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_ft_{k}.pth")
-
-                        attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                        raw_img = inputs[0, 0].cpu().numpy()
-                        
-                        self.save_attention_visualization(raw_img, attn_map, "ft", epoch, batch_index_val)
                             
                 if self.early_stopping(avg_val_losses) : 
                     print(f'Fine Tuning Training Early Stopping : Epoch n° {epoch}')
@@ -474,6 +480,13 @@ class CL_Model:
                             #Logging
                             tepoch.set_description(f"Epoch {epoch}")
                             tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')
+
+                            if epoch % 10 == 0 :     
+
+                                attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                                raw_img = input[0, 0].cpu().numpy()
+                                
+                                self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val)
                             
                         avg_val_losses.append(np.average(val_loss))
 
@@ -485,11 +498,6 @@ class CL_Model:
                         else :
                             self.save_best_model(avg_val_losses, self.model, self.cfg.contrastive_pretraining.save_path_backbone.split(".")[0]+f"_bl_{k}.pth")
                             self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_bl_{k}.pth")
-                        
-                        attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                        raw_img = inputs[0, 0].cpu().numpy()
-                        
-                        self.save_attention_visualization(raw_img, attn_map, "bl", epoch, batch_index_val)
 
                 if self.early_stopping(avg_val_losses) : 
                     print(f'Fine Tuning Training Early Stopping : Epoch n° {epoch}')
