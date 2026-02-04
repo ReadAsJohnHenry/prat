@@ -33,8 +33,8 @@ class CL_Model:
                                             reduction = 'mean',
                                             softmax = True).to(self.device)
 
-        self.model = U_Net_CL.UNet(self.cfg.contrastive_pretraining.n_channels, self.cfg.contrastive_pretraining.n_features_map).to(self.device) 
-        # self.model = U_Net_CL.AttentionUNet(self.cfg.contrastive_pretraining.n_channels, self.cfg.contrastive_pretraining.n_features_map).to(self.device) 
+        # self.model = U_Net_CL.UNet(self.cfg.contrastive_pretraining.n_channels, self.cfg.contrastive_pretraining.n_features_map).to(self.device) 
+        self.model = U_Net_CL.AttentionUNet(self.cfg.contrastive_pretraining.n_channels, self.cfg.contrastive_pretraining.n_features_map).to(self.device) 
         self.finetuning_layer =  U_Net_CL.OutConv(self.cfg.contrastive_pretraining.n_features_map, self.cfg.contrastive_pretraining.n_classes).to(self.device)
 
         if self.cfg.contrastive_pretraining.projection_head_depth == 0 :
@@ -237,6 +237,11 @@ class CL_Model:
                         else :
                             self.save_best_model(avg_val_losses, self.model, self.cfg.contrastive_pretraining.save_path_backbone)
 
+                        attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                        raw_img = view_1[0, 0].cpu().numpy()
+                        
+                        self.save_attention_visualization(raw_img, attn_map, "cl", epoch, batch_index_val)
+
 
         return avg_train_losses, avg_val_losses
 
@@ -309,10 +314,10 @@ class CL_Model:
                         else :
                             self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_lp_{k}.pth")
 
-                        # attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                        # raw_img = inputs[0, 0].cpu().numpy()
+                        attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                        raw_img = inputs[0, 0].cpu().numpy()
                         
-                        # self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val)
+                        self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val)
 
 
         return avg_train_losses, avg_val_losses
@@ -393,10 +398,10 @@ class CL_Model:
                             self.save_best_model(avg_val_losses, self.model, self.cfg.contrastive_pretraining.save_path_backbone.split(".")[0]+f"_ft_{k}.pth")
                             self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_ft_{k}.pth")
 
-                        # attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                        # raw_img = inputs[0, 0].cpu().numpy()
+                        attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                        raw_img = inputs[0, 0].cpu().numpy()
                         
-                        # self.save_attention_visualization(raw_img, attn_map, "ft", epoch, batch_index_val)
+                        self.save_attention_visualization(raw_img, attn_map, "ft", epoch, batch_index_val)
                             
                 if self.early_stopping(avg_val_losses) : 
                     print(f'Fine Tuning Training Early Stopping : Epoch n° {epoch}')
@@ -481,10 +486,10 @@ class CL_Model:
                             self.save_best_model(avg_val_losses, self.model, self.cfg.contrastive_pretraining.save_path_backbone.split(".")[0]+f"_bl_{k}.pth")
                             self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_bl_{k}.pth")
                         
-                        # attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                        # raw_img = inputs[0, 0].cpu().numpy()
+                        attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                        raw_img = inputs[0, 0].cpu().numpy()
                         
-                        # self.save_attention_visualization(raw_img, attn_map, "bl", epoch, batch_index_val)
+                        self.save_attention_visualization(raw_img, attn_map, "bl", epoch, batch_index_val)
 
                 if self.early_stopping(avg_val_losses) : 
                     print(f'Fine Tuning Training Early Stopping : Epoch n° {epoch}')

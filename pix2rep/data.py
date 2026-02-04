@@ -139,7 +139,7 @@ class Partially_Supervised_Loaders() :
         self.slices_per_groups = self.get_slices_per_groups()
 
         self.g = torch.Generator()
-        self.g.manual_seed(123)
+        self.g.manual_seed(3407)
     
     def get_patients_ids_per_group(self) : 
 
@@ -248,7 +248,7 @@ class Partially_Supervised_Loaders() :
     
     def build_loaders(self, k=None) : 
 
-        self.g.manual_seed(123)
+        self.g.manual_seed(3407)
 
         ########### Preprocessing ###########
 
@@ -315,7 +315,8 @@ class Partially_Supervised_Loaders() :
         validation_loader = torch.utils.data.DataLoader(
             validation_dataset,
             batch_size = self.cfg.data.batch_size,
-            shuffle = True,
+            # shuffle = True,
+            shuffle = False,
             generator = self.g,
             num_workers = 0,
         )
@@ -334,7 +335,7 @@ class Partially_Supervised_Loaders() :
 
     def build_loaders_for_CL_pretraining(self) : 
 
-        self.g.manual_seed(123)
+        self.g.manual_seed(3407)
 
         ########### Preprocessing ###########
 
@@ -400,7 +401,8 @@ class Partially_Supervised_Loaders() :
         validation_loader = torch.utils.data.DataLoader(
             validation_dataset,
             batch_size = self.cfg.data.batch_size_CL,
-            shuffle = True,
+            # shuffle = True,
+            shuffle = False,
             generator = self.g,
             num_workers = 0,
         )
