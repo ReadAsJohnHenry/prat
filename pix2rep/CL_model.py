@@ -312,7 +312,7 @@ class CL_Model:
                             if epoch % 10 == 0 and batch_index_val % 5 == 0:     
 
                                 attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                                raw_img = input[0, 0].cpu().numpy()
+                                raw_img = inputs[0, 0].cpu().numpy()
                                 
                                 self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val, k)
                             
@@ -396,7 +396,7 @@ class CL_Model:
                             if epoch % 10 == 0 and batch_index_val % 5 == 0:     
 
                                 attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                                raw_img = input[0, 0].cpu().numpy()
+                                raw_img = inputs[0, 0].cpu().numpy()
                                 
                                 self.save_attention_visualization(raw_img, attn_map, "ft", epoch, batch_index_val, k)
                             
@@ -484,7 +484,7 @@ class CL_Model:
                             if epoch % 10 == 0 and batch_index_val % 5 == 0:     
 
                                 attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                                raw_img = input[0, 0].cpu().numpy()
+                                raw_img = inputs[0, 0].cpu().numpy()
                                 
                                 self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val, k)
                             
