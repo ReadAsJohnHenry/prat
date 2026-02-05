@@ -57,7 +57,7 @@ if __name__ == '__main__':
     cl_model = CL_model.CL_Model(cfg)
 
     # Run pre-training
-    avg_train_losses, avg_val_losses = cl_model.run_training(training_loader_CL, validation_loader_CL)
+    # avg_train_losses, avg_val_losses = cl_model.run_training(training_loader_CL, validation_loader_CL)
 
     
     Xtr = [1, 2, 5, 10, 20, 50, 100]
