@@ -72,7 +72,7 @@ class CL_Model:
             print('outconv loaded')
 
     
-    def save_attention_visualization(self, image, attn_map, label, epoch, idx):
+    def save_attention_visualization(self, image, attn_map, label, epoch, idx, k=100):
         save_dir = os.path.join("hanyu/test1", "attention_viz")
         os.makedirs(save_dir, exist_ok=True)
         
@@ -89,7 +89,7 @@ class CL_Model:
         ax[2].imshow(attn_map, cmap='jet', alpha=0.4)
         ax[2].set_title("Saliency Overlay")
         
-        plt.savefig(os.path.join(save_dir, f"{label}_epoch_{epoch}_sample_{idx}.png"))
+        plt.savefig(os.path.join(save_dir, f"{label}_{k}_shot_epoch_{epoch}_sample_{idx}.png"))
         plt.close()
 
 
@@ -230,7 +230,7 @@ class CL_Model:
                             tepoch.set_description(f"Epoch {epoch}")
                             tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')  
 
-                            if epoch % 20 == 0 :     
+                            if epoch % 20 == 0 and batch_index_val % 5 == 0:     
 
                                 attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
                                 raw_img = view_1[0, 0].cpu().numpy()
@@ -309,12 +309,12 @@ class CL_Model:
                             tepoch.set_description(f"Epoch {epoch}")
                             tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')
 
-                            if epoch % 10 == 0 :     
+                            if epoch % 10 == 0 and batch_index_val % 5 == 0:     
 
                                 attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
                                 raw_img = input[0, 0].cpu().numpy()
                                 
-                                self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val)
+                                self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val, k)
                             
                         avg_val_losses.append(np.average(val_loss))
 
@@ -393,12 +393,12 @@ class CL_Model:
                             tepoch.set_description(f"Epoch {epoch}")
                             tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')
 
-                            if epoch % 10 == 0 :     
+                            if epoch % 10 == 0 and batch_index_val % 5 == 0:     
 
                                 attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
                                 raw_img = input[0, 0].cpu().numpy()
                                 
-                                self.save_attention_visualization(raw_img, attn_map, "ft", epoch, batch_index_val)
+                                self.save_attention_visualization(raw_img, attn_map, "ft", epoch, batch_index_val, k)
                             
                         avg_val_losses.append(np.average(val_loss))
 
@@ -481,12 +481,12 @@ class CL_Model:
                             tepoch.set_description(f"Epoch {epoch}")
                             tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')
 
-                            if epoch % 10 == 0 :     
+                            if epoch % 10 == 0 and batch_index_val % 5 == 0:     
 
                                 attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
                                 raw_img = input[0, 0].cpu().numpy()
                                 
-                                self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val)
+                                self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val, k)
                             
                         avg_val_losses.append(np.average(val_loss))
 
