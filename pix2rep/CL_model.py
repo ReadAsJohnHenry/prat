@@ -212,6 +212,8 @@ class CL_Model:
 
                             # Forward pass of the 2 views through the network and projection head
                             features_1 = self.projection_head(self.model(view_1)) 
+                            attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                            
                             features_2 = self.projection_head(self.model(view_2))
 
                             # Apply spatial transformation to the feature map
@@ -232,7 +234,7 @@ class CL_Model:
 
                             if epoch % 20 == 0 and batch_index_val % 5 == 0:     
 
-                                attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                                # attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
                                 raw_img = view_1[0, 0].cpu().numpy()
                                 
                                 self.save_attention_visualization(raw_img, attn_map, "cl", epoch, batch_index_val)
@@ -486,7 +488,7 @@ class CL_Model:
                                 attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
                                 raw_img = inputs[0, 0].cpu().numpy()
                                 
-                                self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val, k)
+                                self.save_attention_visualization(raw_img, attn_map, "bf", epoch, batch_index_val, k)
                             
                         avg_val_losses.append(np.average(val_loss))
 
