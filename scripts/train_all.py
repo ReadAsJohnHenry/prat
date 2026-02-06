@@ -64,8 +64,8 @@ if __name__ == '__main__':
     #Xtr = [1, 50, 100]
     #Xtr = [1]
     for k in Xtr:
-        # for j in range(3):
-        for j in range(1):
+        for j in range(3):
+        # for j in range(1):
             # limited_subjects_dic = limit_labeled_data(subjects_dic, k)
             
             fix_all_seeds(3407)
