@@ -34,7 +34,8 @@ class CL_Model:
                                             softmax = True).to(self.device)
 
         # self.model = U_Net_CL.UNet(self.cfg.contrastive_pretraining.n_channels, self.cfg.contrastive_pretraining.n_features_map).to(self.device) 
-        self.model = U_Net_CL.AttentionUNet(self.cfg.contrastive_pretraining.n_channels, self.cfg.contrastive_pretraining.n_features_map).to(self.device) 
+        # self.model = U_Net_CL.AttentionUNet(self.cfg.contrastive_pretraining.n_channels, self.cfg.contrastive_pretraining.n_features_map).to(self.device) 
+        self.model = U_Net_CL.UNet_CBAM(self.cfg.contrastive_pretraining.n_channels, self.cfg.contrastive_pretraining.n_features_map).to(self.device) 
         self.finetuning_layer =  U_Net_CL.OutConv(self.cfg.contrastive_pretraining.n_features_map, self.cfg.contrastive_pretraining.n_classes).to(self.device)
 
         if self.cfg.contrastive_pretraining.projection_head_depth == 0 :
@@ -212,8 +213,8 @@ class CL_Model:
 
                             # Forward pass of the 2 views through the network and projection head
                             features_1 = self.projection_head(self.model(view_1)) 
-                            attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                            
+                            # attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+
                             features_2 = self.projection_head(self.model(view_2))
 
                             # Apply spatial transformation to the feature map
@@ -232,12 +233,12 @@ class CL_Model:
                             tepoch.set_description(f"Epoch {epoch}")
                             tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')  
 
-                            if epoch % 20 == 0 and batch_index_val % 5 == 0:     
+                            # if epoch % 20 == 0 and batch_index_val % 5 == 0:     
 
-                                # attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                                raw_img = view_1[0, 0].cpu().numpy()
+                            #     # attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                            #     raw_img = view_1[0, 0].cpu().numpy()
                                 
-                                self.save_attention_visualization(raw_img, attn_map, "cl", epoch, batch_index_val)
+                            #     self.save_attention_visualization(raw_img, attn_map, "cl", epoch, batch_index_val)
 
                         avg_val_losses.append(np.average(val_loss))
                         
@@ -311,12 +312,12 @@ class CL_Model:
                             tepoch.set_description(f"Epoch {epoch}")
                             tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')
 
-                            if epoch % 10 == 0 and batch_index_val % 5 == 0:     
+                            # if epoch % 10 == 0 and batch_index_val % 5 == 0:     
 
-                                attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                                raw_img = inputs[0, 0].cpu().numpy()
+                            #     attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                            #     raw_img = inputs[0, 0].cpu().numpy()
                                 
-                                self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val, k)
+                            #     self.save_attention_visualization(raw_img, attn_map, "lp", epoch, batch_index_val, k)
                             
                         avg_val_losses.append(np.average(val_loss))
 
@@ -395,12 +396,12 @@ class CL_Model:
                             tepoch.set_description(f"Epoch {epoch}")
                             tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')
 
-                            if epoch % 10 == 0 and batch_index_val % 5 == 0:     
+                            # if epoch % 10 == 0 and batch_index_val % 5 == 0:     
 
-                                attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                                raw_img = inputs[0, 0].cpu().numpy()
+                            #     attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                            #     raw_img = inputs[0, 0].cpu().numpy()
                                 
-                                self.save_attention_visualization(raw_img, attn_map, "ft", epoch, batch_index_val, k)
+                            #     self.save_attention_visualization(raw_img, attn_map, "ft", epoch, batch_index_val, k)
                             
                         avg_val_losses.append(np.average(val_loss))
 

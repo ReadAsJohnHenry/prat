@@ -232,3 +232,57 @@ class AttentionUNet(nn.Module):
         self.last_attention_maps = att_maps
 
         return x
+
+class CBAM(nn.Module):
+    def __init__(self, channels, reduction=16):
+        super(CBAM, self).__init__()
+        # Channel Attention
+        self.ca = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Conv2d(channels, channels // reduction, 1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(channels // reduction, channels, 1, bias=False),
+            nn.Sigmoid()
+        )
+        # Spatial Attention
+        self.sa = nn.Sequential(
+            nn.Conv2d(2, 1, 7, padding=3, bias=False),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        # 1. Apply Channel Attention
+        x = x * self.ca(x)
+        # 2. Apply Spatial Attention
+        avg_out = torch.mean(x, dim=1, keepdim=True)
+        max_out, _ = torch.max(x, dim=1, keepdim=True)
+        spatial = torch.cat([avg_out, max_out], dim=1)
+        x = x * self.sa(spatial)
+        return x
+
+class CBAM(nn.Module):
+    def __init__(self, channels, reduction=16):
+        super(CBAM, self).__init__()
+        # Channel Attention
+        self.ca = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Conv2d(channels, channels // reduction, 1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(channels // reduction, channels, 1, bias=False),
+            nn.Sigmoid()
+        )
+        # Spatial Attention
+        self.sa = nn.Sequential(
+            nn.Conv2d(2, 1, 7, padding=3, bias=False),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        # 1. Apply Channel Attention
+        x = x * self.ca(x)
+        # 2. Apply Spatial Attention
+        avg_out = torch.mean(x, dim=1, keepdim=True)
+        max_out, _ = torch.max(x, dim=1, keepdim=True)
+        spatial = torch.cat([avg_out, max_out], dim=1)
+        x = x * self.sa(spatial)
+        return x
