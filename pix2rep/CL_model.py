@@ -484,12 +484,12 @@ class CL_Model:
                             tepoch.set_description(f"Epoch {epoch}")
                             tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')
 
-                            if epoch % 10 == 0 and batch_index_val % 5 == 0:     
+                            # if epoch % 10 == 0 and batch_index_val % 5 == 0:     
 
-                                attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
-                                raw_img = inputs[0, 0].cpu().numpy()
+                            #     attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                            #     raw_img = inputs[0, 0].cpu().numpy()
                                 
-                                self.save_attention_visualization(raw_img, attn_map, "bf", epoch, batch_index_val, k)
+                            #     self.save_attention_visualization(raw_img, attn_map, "bf", epoch, batch_index_val, k)
                             
                         avg_val_losses.append(np.average(val_loss))
 
