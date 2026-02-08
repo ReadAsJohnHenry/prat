@@ -36,11 +36,11 @@ def fix_all_seeds(seed=42):
 
 fix_all_seeds(42)
 
-def run_multi_sigma_test(model, loader, model_name, k_val, sigmas=[0, 1, 2, 4]):
+def run_multi_sigma_test(model, image, model_name, k_val, sigmas=[0, 1, 2, 4]):
     save_dir = os.path.join("hanyu/test1", "attention_infer")
     model.model.eval()
-    batch = next(iter(loader))
-    image = batch['image'][0:1].to('cuda') # (1, 1, H, W)
+    # batch = next(iter(loader))
+    # image = batch['image'][0:1].to('cuda') # (1, 1, H, W)
     
     fig, axes = plt.subplots(len(sigmas), 3, figsize=(12, 4 * len(sigmas)))
     fig.suptitle(f"Robustness Test: {model_name} (Xtr={k_val})", fontsize=16)
@@ -86,13 +86,16 @@ if __name__ == '__main__':
     loaders_builder = data.Partially_Supervised_Loaders(dataset, all_slices, subjects_dic, cfg)
     test_volume_loader = loaders_builder.build_test_volume_loader()
     
+    print("Locking a specific slice for consistent inference test...")
+    fixed_batch = next(iter(test_volume_loader))
+    fixed_image = fixed_batch['image'][0:1].clone().detach()
 
     print("Pretrained")
     cl_model = CL_model.CL_Model(cfg)
     cl_model.load_backbone_model(cfg.contrastive_pretraining.save_path_backbone)
     # test_losses, test_losses_detailed = cl_model.run_test_volume(test_volume_loader)
     # print(f"Avg. Dice (ACDC): {1 - test_losses}")
-    run_multi_sigma_test(cl_model, test_volume_loader, "pre-trained", 100)
+    run_multi_sigma_test(cl_model, fixed_image, "pre-trained", 100)
 
     Xtr = [1, 2, 5, 10, 20, 50, 100]
     # Xtr = [1]
@@ -108,7 +111,7 @@ if __name__ == '__main__':
         cl_model.load_outconv_model(cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_bl_{k}.pth")
         # test_losses, test_losses_detailed = cl_model.run_test_volume(test_volume_loader)
         # print(f"Avg. Dice (ACDC): {1 - test_losses}")
-        run_multi_sigma_test(cl_model, test_volume_loader, "Baseline", k)
+        run_multi_sigma_test(cl_model, fixed_image, "Baseline", k)
 
         print("Proposed (only Linear-probing)")
         cl_model = CL_model.CL_Model(cfg)
@@ -116,7 +119,7 @@ if __name__ == '__main__':
         cl_model.load_outconv_model(cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_lp_{k}.pth")
         # test_losses, test_losses_detailed = cl_model.run_test_volume(test_volume_loader)
         # print(f"Avg. Dice (ACDC): {1 - test_losses}")
-        run_multi_sigma_test(cl_model, test_volume_loader, "LinearProbing", k)
+        run_multi_sigma_test(cl_model, fixed_image, "LinearProbing", k)
 
         print("Proposed")
         cl_model = CL_model.CL_Model(cfg)
@@ -124,4 +127,4 @@ if __name__ == '__main__':
         cl_model.load_outconv_model(cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_ft_{k}.pth")
         # test_losses, test_losses_detailed = cl_model.run_test_volume(test_volume_loader)
         # print(f"Avg. Dice (ACDC): {1 - test_losses}")
-        run_multi_sigma_test(cl_model, test_volume_loader, "FineTuning", k)
+        run_multi_sigma_test(cl_model, fixed_image, "FineTuning", k)
