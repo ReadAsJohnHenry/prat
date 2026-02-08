@@ -63,14 +63,23 @@ def run_multi_sigma_test(model, image, model_name, k_val, sigmas=[0, 1, 2, 4]):
         axes[i, 0].set_ylabel(f"Sigma={s}", fontsize=12)
         
         axes[i, 1].imshow(display_img, cmap='gray')
-        axes[i, 1].imshow(att_map, cmap='jet', alpha=0.5)
+        # axes[i, 1].imshow(att_map, cmap='jet', alpha=0.5)
+        im = axes[i, 1].imshow(att_map, cmap='jet')
+        plt.colorbar(im, ax=axes[i, 1])
+        
+        # cbar = fig.colorbar(im, ax=axes[i, 1], fraction=0.046, pad=0.04)
+        # cbar.ax.set_ylabel('Weight', rotation=270, labelpad=15)
+
+        axes[i, 2].imshow(image, cmap='gray')
+        axes[i, 2].imshow(att_map, cmap='jet', alpha=0.4)
+        axes[i, 2].set_title("Saliency Overlay")
         
         # axes[i, 2].imshow(pred, cmap='gray')
         
         if i == 0:
             axes[i, 0].set_title("Input")
             axes[i, 1].set_title("Attention Map")
-            # axes[i, 2].set_title("Prediction")
+            axes[i, 2].set_title("Saliency Overlay")
 
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"multi_sigma_{model_name}_k{k_val}.png"))
