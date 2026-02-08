@@ -55,7 +55,7 @@ def run_multi_sigma_test(model, image, model_name, k_val, sigmas=[0, 1, 2, 4]):
             output = model.model(input_img, return_att=True)
             atts = model.model.last_attention_maps
             pred = (torch.sigmoid(output) > 0.5).squeeze().cpu().numpy()
-            att_map = atts[-1].squeeze().cpu().numpy()
+            att_map = atts[-1][0].squeeze().cpu().numpy()
         
         axes[i, 0].imshow(input_img.squeeze().cpu().numpy(), cmap='gray')
         axes[i, 0].set_ylabel(f"Sigma={s}", fontsize=12)
