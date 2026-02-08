@@ -73,6 +73,8 @@ def run_multi_sigma_test(model, image, model_name, k_val, sigmas=[0, 1, 2, 4]):
     plt.savefig(os.path.join(save_dir, f"multi_sigma_{model_name}_k{k_val}.png"))
     plt.close()
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 if __name__ == '__main__':
 
     cfg = Config().cfg
@@ -89,7 +91,7 @@ if __name__ == '__main__':
     
     print("Locking a specific slice for consistent inference test...")
     fixed_batch = next(iter(validation_loader_CL))
-    fixed_image = fixed_batch[0].clone().detach()
+    fixed_image = fixed_batch[0].clone().detach().to(device)
     fixed_image = fixed_image.squeeze(1)
 
     print("Pretrained")
