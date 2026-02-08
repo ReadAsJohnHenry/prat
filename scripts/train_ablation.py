@@ -20,6 +20,7 @@ import os
 import random
 import numpy as np
 import torch
+import torch.nn as nn
 
 def fix_all_seeds(seed=42):
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -82,8 +83,30 @@ if __name__ == '__main__':
                 # avg_train_losses, avg_val_losses = cl_model.run_baseline_finetuning(training_loader, validation_loader, k)
             elif j == 1:
                 cl_model.load_backbone_model(cfg.contrastive_pretraining.save_path_backbone)
+                for param in cl_model.parameters():
+                    param.requires_grad = True
+
+                for m in cl_model.backbone.modules():
+                    if "AttentionGate" in str(type(m)) or "CBAM" in str(type(m)):
+                        print(f"Resetting parameters for: {m}")
+                        for layer in m.modules():
+                            if isinstance(layer, nn.Conv2d):
+                                nn.init.kaiming_normal_(layer.weight)
+                                if layer.bias is not None:
+                                    nn.init.constant_(layer.bias, 0)
                 avg_train_losses, avg_val_losses = cl_model.run_finetuning(training_loader, validation_loader, k)
             elif j == 2:
                 cl_model.load_backbone_model(cfg.contrastive_pretraining.save_path_backbone)
+                for param in cl_model.parameters():
+                    param.requires_grad = True
+
+                for m in cl_model.backbone.modules():
+                    if "AttentionGate" in str(type(m)) or "CBAM" in str(type(m)):
+                        print(f"Resetting parameters for: {m}")
+                        for layer in m.modules():
+                            if isinstance(layer, nn.Conv2d):
+                                nn.init.kaiming_normal_(layer.weight)
+                                if layer.bias is not None:
+                                    nn.init.constant_(layer.bias, 0)
                 avg_train_losses, avg_val_losses = cl_model.run_linear_probing(training_loader, validation_loader, k)
     
