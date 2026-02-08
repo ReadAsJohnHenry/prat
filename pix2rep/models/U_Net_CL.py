@@ -277,14 +277,18 @@ class CBAM(nn.Module):
             nn.Sigmoid()
         )
 
-    def forward(self, x):
+    def forward(self, x, return_att=False):
         # 1. Apply Channel Attention
         x = x * self.ca(x)
         # 2. Apply Spatial Attention
         avg_out = torch.mean(x, dim=1, keepdim=True)
         max_out, _ = torch.max(x, dim=1, keepdim=True)
         spatial = torch.cat([avg_out, max_out], dim=1)
-        x = x * self.sa(spatial)
+        sa_weight = self.sa(spatial)
+        x = x * sa_weight
+        
+        if return_att:
+            return x, sa_weight
         return x
     
 class UNet_CBAM(nn.Module):
@@ -310,7 +314,7 @@ class UNet_CBAM(nn.Module):
         self.up4 = Up(256, 128 // factor, bilinear)
         self.up5 = Up(128, n_features_map, bilinear)
 
-    def forward(self, x):
+    def forward(self, x, return_att=False):
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)
@@ -318,10 +322,37 @@ class UNet_CBAM(nn.Module):
         x5 = self.down4(x4)
         x6 = self.down5(x5)
 
-        x = self.up1(x6, self.cbam5(x5))
-        x = self.up2(x, self.cbam4(x4))
-        x = self.up3(x, self.cbam3(x3))
-        x = self.up4(x, self.cbam2(x2))
-        x = self.up5(x, self.cbam1(x1))
+        if return_att:
+            att_maps = []
+            
+            f5, att5 = self.cbam5(x5, return_att=True)
+            att_maps.append(att5)
+            x = self.up1(x6, f5)
+
+            f4, att4 = self.cbam4(x4, return_att=True)
+            att_maps.append(att4)
+            x = self.up2(x5, f4)
+
+            f3, att3 = self.cbam3(x3, return_att=True)
+            att_maps.append(att3)
+            x = self.up3(x4, f3)
+
+            f2, att2 = self.cbam2(x2, return_att=True)
+            att_maps.append(att2)
+            x = self.up4(x3, f2)
+
+            f1, att1 = self.cbam1(x1, return_att=True)
+            att_maps.append(att1)
+            x = self.up5(x2, f1)
+
+            self.last_attention_maps = att_maps
+
+        else:
+
+            x = self.up1(x6, self.cbam5(x5))
+            x = self.up2(x, self.cbam4(x4))
+            x = self.up3(x, self.cbam3(x3))
+            x = self.up4(x, self.cbam2(x2))
+            x = self.up5(x, self.cbam1(x1))
         
         return x
