@@ -84,11 +84,12 @@ if __name__ == '__main__':
     subjects_dic, all_slices = dataset.extract_and_preprocess_slices()
     # print(subjects_dic[0], all_slices[0])
     loaders_builder = data.Partially_Supervised_Loaders(dataset, all_slices, subjects_dic, cfg)
-    test_volume_loader = loaders_builder.build_test_volume_loader()
+    # test_volume_loader = loaders_builder.build_test_volume_loader()
+    training_loader_CL, validation_loader_CL = loaders_builder.build_loaders_for_CL_pretraining()
     
     print("Locking a specific slice for consistent inference test...")
-    fixed_batch = next(iter(test_volume_loader))
-    fixed_image = fixed_batch['image'][0:1].clone().detach()
+    fixed_batch = next(iter(validation_loader_CL))
+    fixed_image = fixed_batch[0].clone().detach()
 
     print("Pretrained")
     cl_model = CL_model.CL_Model(cfg)
