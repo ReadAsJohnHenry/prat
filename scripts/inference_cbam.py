@@ -90,6 +90,7 @@ if __name__ == '__main__':
     print("Locking a specific slice for consistent inference test...")
     fixed_batch = next(iter(validation_loader_CL))
     fixed_image = fixed_batch[0].clone().detach()
+    fixed_image = fixed_image.squeeze(1)
 
     print("Pretrained")
     cl_model = CL_model.CL_Model(cfg)
