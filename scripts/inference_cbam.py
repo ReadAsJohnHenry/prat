@@ -54,7 +54,7 @@ def run_multi_sigma_test(model, image, model_name, k_val, sigmas=[0, 1, 2, 4]):
         with torch.no_grad():
             output = model.model(input_img, return_att=True)
             atts = model.model.last_attention_maps
-            pred = (torch.sigmoid(output) > 0.5).squeeze().cpu().numpy()
+            # pred = (torch.sigmoid(output) > 0.5).squeeze().cpu().numpy()
             att_map = atts[-1][0].squeeze().cpu().numpy()
         
         display_img = input_img[0].squeeze().cpu().numpy()
@@ -65,12 +65,12 @@ def run_multi_sigma_test(model, image, model_name, k_val, sigmas=[0, 1, 2, 4]):
         axes[i, 1].imshow(display_img, cmap='gray')
         axes[i, 1].imshow(att_map, cmap='jet', alpha=0.5)
         
-        axes[i, 2].imshow(pred, cmap='gray')
+        # axes[i, 2].imshow(pred, cmap='gray')
         
         if i == 0:
             axes[i, 0].set_title("Input")
             axes[i, 1].set_title("Attention Map")
-            axes[i, 2].set_title("Prediction")
+            # axes[i, 2].set_title("Prediction")
 
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"multi_sigma_{model_name}_k{k_val}.png"))
