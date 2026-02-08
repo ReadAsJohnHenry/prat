@@ -57,10 +57,12 @@ def run_multi_sigma_test(model, image, model_name, k_val, sigmas=[0, 1, 2, 4]):
             pred = (torch.sigmoid(output) > 0.5).squeeze().cpu().numpy()
             att_map = atts[-1][0].squeeze().cpu().numpy()
         
-        axes[i, 0].imshow(input_img.squeeze().cpu().numpy(), cmap='gray')
+        display_img = input_img[0].squeeze().cpu().numpy()
+        
+        axes[i, 0].imshow(display_img, cmap='gray')
         axes[i, 0].set_ylabel(f"Sigma={s}", fontsize=12)
         
-        axes[i, 1].imshow(input_img.squeeze().cpu().numpy(), cmap='gray')
+        axes[i, 1].imshow(display_img, cmap='gray')
         axes[i, 1].imshow(att_map, cmap='jet', alpha=0.5)
         
         axes[i, 2].imshow(pred, cmap='gray')
