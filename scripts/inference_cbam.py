@@ -70,7 +70,7 @@ def run_multi_sigma_test(model, image, model_name, k_val, sigmas=[0, 1, 2, 4]):
         # cbar = fig.colorbar(im, ax=axes[i, 1], fraction=0.046, pad=0.04)
         # cbar.ax.set_ylabel('Weight', rotation=270, labelpad=15)
 
-        axes[i, 2].imshow(image, cmap='gray')
+        axes[i, 2].imshow(display_img, cmap='gray')
         axes[i, 2].imshow(att_map, cmap='jet', alpha=0.4)
         axes[i, 2].set_title("Saliency Overlay")
         
