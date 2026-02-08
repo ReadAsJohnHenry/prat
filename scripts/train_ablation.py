@@ -83,10 +83,10 @@ if __name__ == '__main__':
                 # avg_train_losses, avg_val_losses = cl_model.run_baseline_finetuning(training_loader, validation_loader, k)
             elif j == 1:
                 cl_model.load_backbone_model(cfg.contrastive_pretraining.save_path_backbone)
-                for param in cl_model.parameters():
+                for param in cl_model.model.parameters():
                     param.requires_grad = True
 
-                for m in cl_model.backbone.modules():
+                for m in cl_model.model.modules():
                     if "AttentionGate" in str(type(m)) or "CBAM" in str(type(m)):
                         print(f"Resetting parameters for: {m}")
                         for layer in m.modules():
@@ -97,10 +97,10 @@ if __name__ == '__main__':
                 avg_train_losses, avg_val_losses = cl_model.run_finetuning(training_loader, validation_loader, k)
             elif j == 2:
                 cl_model.load_backbone_model(cfg.contrastive_pretraining.save_path_backbone)
-                for param in cl_model.parameters():
+                for param in cl_model.model.parameters():
                     param.requires_grad = True
 
-                for m in cl_model.backbone.modules():
+                for m in cl_model.model.modules():
                     if "AttentionGate" in str(type(m)) or "CBAM" in str(type(m)):
                         print(f"Resetting parameters for: {m}")
                         for layer in m.modules():
