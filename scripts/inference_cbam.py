@@ -52,7 +52,8 @@ def run_multi_sigma_test(model, image, model_name, k_val, sigmas=[0, 1, 2, 4]):
             input_img = transforms.GaussianBlur(kernel_size=7, sigma=s)(image)
         
         with torch.no_grad():
-            output, atts = model.model(input_img, return_att=True)
+            output = model.model(input_img, return_att=True)
+            atts = model.model.last_attention_maps
             pred = (torch.sigmoid(output) > 0.5).squeeze().cpu().numpy()
             att_map = atts[-1].squeeze().cpu().numpy()
         
