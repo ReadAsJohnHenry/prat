@@ -96,7 +96,7 @@ if __name__ == '__main__':
                                     nn.init.constant_(layer.bias, 0)
                 
                 for name, param in cl_model.model.named_parameters():
-                    if any(x in name for x in ['inc', 'down', 'x6']):
+                    if any(x in name for x in ['inc', 'down', 'x6', 'up']):
                         param.requires_grad = False
                 avg_train_losses, avg_val_losses = cl_model.run_ablation(training_loader, validation_loader, k)
             elif j == 2:
