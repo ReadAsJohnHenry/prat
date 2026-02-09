@@ -37,7 +37,7 @@ def fix_all_seeds(seed=42):
 fix_all_seeds(42)
 
 def run_multi_sigma_test(model, image, model_name, k_val, sigmas=[0, 1, 2, 4]):
-    save_dir = os.path.join("hanyu/test1", "attention_ag")
+    save_dir = os.path.join("hanyu/test1", "attention_ag_ablation")
     model.model.eval()
     # batch = next(iter(loader))
     # image = batch['image'][0:1].to('cuda') # (1, 1, H, W)
