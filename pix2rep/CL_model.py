@@ -593,8 +593,8 @@ class CL_Model:
                             torch.save(self.model.state_dict(), self.cfg.contrastive_pretraining.save_path_outconv_layer)
                             pass
                         else :
-                            self.save_best_model(avg_val_losses, self.model, self.cfg.contrastive_pretraining.save_path_backbone.split(".")[0]+f"_ft_{k}.pth")
-                            self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_ft_{k}.pth")
+                            self.save_best_model(avg_val_losses, self.model, self.cfg.contrastive_pretraining.save_path_backbone.split(".")[0]+f"_al_{k}.pth")
+                            self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_al_{k}.pth")
                             
                 if self.early_stopping(avg_val_losses) : 
                     print(f'Fine Tuning Training Early Stopping : Epoch n° {epoch}')

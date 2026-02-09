@@ -98,7 +98,7 @@ if __name__ == '__main__':
                 for name, param in cl_model.model.named_parameters():
                     if any(x in name for x in ['inc', 'down', 'x6']):
                         param.requires_grad = False
-                avg_train_losses, avg_val_losses = cl_model.run_finetuning(training_loader, validation_loader, k)
+                avg_train_losses, avg_val_losses = cl_model.run_ablation(training_loader, validation_loader, k)
             elif j == 2:
                 pass
                 # cl_model.load_backbone_model(cfg.contrastive_pretraining.save_path_backbone)
