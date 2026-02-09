@@ -507,6 +507,100 @@ class CL_Model:
                     break
 
         return avg_train_losses, avg_val_losses
+    
+    def run_ablation(self, training_loader, validation_loader, k) :
+
+        avg_train_losses = []
+        avg_val_losses = []
+
+        trainable_backbone_params = filter(lambda p: p.requires_grad, self.model.parameters())
+
+        optim_backbone = torch.optim.Adam(
+            trainable_backbone_params, 
+            lr=self.cfg.contrastive_pretraining.finetuning_learning_rate_backbone
+        )
+        # optim_backbone = torch.optim.Adam(self.model.parameters(), lr=self.cfg.contrastive_pretraining.finetuning_learning_rate_backbone)
+        optim_outconv = torch.optim.Adam(self.finetuning_layer.parameters(), lr=self.cfg.contrastive_pretraining.finetuning_learning_rate_outconv)
+
+        for epoch in range(self.cfg.contrastive_pretraining.num_epochs) :
+
+            train_loss = []
+            val_loss = []
+
+            # Training
+            self.model.train()
+            self.finetuning_layer.train()
+            with tqdm.tqdm(training_loader, unit = 'batch', disable = self.cfg.contrastive_pretraining.tqdm_disabled) as tepoch :
+                for batch_index, batch in enumerate(tepoch) :
+
+                    inputs = batch[0].squeeze(1).float().to(self.device)
+                    labels = batch[1].squeeze(1).float().to(self.device)
+
+                    labels = losses.transform_mask_for_dice_loss(labels, batch, num_classes=self.cfg.contrastive_pretraining.n_classes).to(self.device)
+
+                    logits = self.finetuning_layer(self.model(inputs))
+                    
+                    batch_loss_training = self.evaluation_loss(logits, labels)
+                    train_loss.append(batch_loss_training.item())
+                    
+                    optim_backbone.zero_grad()
+                    optim_outconv.zero_grad()
+
+                    batch_loss_training.backward(retain_graph = True)
+
+                    optim_backbone.step()
+                    optim_outconv.step()
+
+                    #Logging
+                    tepoch.set_description(f"Epoch {epoch}")
+                    tepoch.set_postfix(training_loss = f'{batch_loss_training.item()}')      
+
+            avg_train_losses.append(np.average(train_loss))
+            
+
+            # Validation
+            if epoch % self.cfg.contrastive_pretraining.eval_frequency == 0 :
+                self.model.eval()
+                self.finetuning_layer.eval()
+                with torch.no_grad() :
+                    with tqdm.tqdm(validation_loader, unit = 'batch', disable = self.cfg.contrastive_pretraining.tqdm_disabled) as tepoch :
+                        for batch_index_val, batch_val in enumerate(tepoch) :
+
+                            inputs = batch_val[0].squeeze(1).float().to(self.device)
+                            labels = batch_val[1].squeeze(1).float().to(self.device)
+                            
+                            labels = losses.transform_mask_for_dice_loss(labels, batch_val, num_classes=self.cfg.contrastive_pretraining.n_classes).to(self.device)
+
+                            logits = self.finetuning_layer(self.model(inputs))
+                            
+                            batch_loss_validation = self.evaluation_loss(logits, labels)
+                            val_loss.append(batch_loss_validation.item())
+
+                            #Logging
+                            tepoch.set_description(f"Epoch {epoch}")
+                            tepoch.set_postfix(validation_loss = f'{batch_loss_validation.item()}')
+
+                            if epoch % 10 == 0 and batch_index_val % 5 == 0:     
+
+                                attn_map = self.model.last_attention_maps[-1][0, 0].detach().cpu().numpy()
+                                raw_img = inputs[0, 0].cpu().numpy()
+                                
+                                self.save_attention_visualization(raw_img, attn_map, "al", epoch, batch_index_val, k)
+                            
+                        avg_val_losses.append(np.average(val_loss))
+
+                        if len(avg_val_losses) == 1 :
+                            torch.save(self.model.state_dict(), self.cfg.contrastive_pretraining.save_path_outconv_layer)
+                            pass
+                        else :
+                            self.save_best_model(avg_val_losses, self.model, self.cfg.contrastive_pretraining.save_path_backbone.split(".")[0]+f"_ft_{k}.pth")
+                            self.save_best_model(avg_val_losses, self.finetuning_layer, self.cfg.contrastive_pretraining.save_path_outconv_layer.split(".")[0]+f"_ft_{k}.pth")
+                            
+                if self.early_stopping(avg_val_losses) : 
+                    print(f'Fine Tuning Training Early Stopping : Epoch n° {epoch}')
+                    break
+
+        return avg_train_losses, avg_val_losses
 
     
     def run_test(self, testing_loader) :
